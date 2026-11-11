@@ -1,503 +1,413 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portofolio Pribadi Dinamis | Web Developer & Designer</title>
-  
-  <!-- Google Fonts: Plus Jakarta Sans -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Escape The Backrooms: Liminal Horror Co-op (3D)</title>
+
+  <!-- Google Fonts: Horror, Liminal & Sci-Fi Monospace -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=VT323&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  
-  <!-- Main Stylesheet -->
-  <link rel="stylesheet" href="style.css" />
+
+  <!-- Three.js 3D Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- PeerJS for WebRTC P2P Co-op Multiplayer -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <!-- Backrooms Stylesheet -->
+  <link rel="stylesheet" href="backrooms.css" />
 </head>
 <body>
 
-  <!-- Decorative Background Glows -->
-  <div class="blob-bg blob-1"></div>
-  <div class="blob-bg blob-2"></div>
+  <!-- Game Shell Container -->
+  <div id="gameContainer">
+    <!-- 3D Canvas -->
+    <canvas id="gameCanvas"></canvas>
 
-  <!-- Navbar -->
-  <header class="navbar" id="navbar">
-    <div class="container nav-container">
-      <a href="#home" class="nav-logo" id="navLogo">
-        <span class="logo-symbol">&lt;/&gt;</span>
-        <span class="logo-text">Ari<span>Dev</span></span>
-      </a>
+    <!-- Post-processing Horror Overlays -->
+    <div id="vignetteOverlay"></div>
+    <div id="vhsScanlines"></div>
+    <div id="sanityGlitchOverlay"></div>
+    <div id="chaseRedFlash"></div>
 
-      <!-- Desktop Nav Menu -->
-      <nav class="nav-menu" id="navMenu">
-        <ul class="nav-list">
-          <li class="nav-item"><a href="#home" class="nav-link active">Beranda</a></li>
-          <li class="nav-item"><a href="#about" class="nav-link">Tentang</a></li>
-          <li class="nav-item"><a href="#services" class="nav-link">Layanan</a></li>
-          <li class="nav-item"><a href="#skills" class="nav-link">Keahlian</a></li>
-          <li class="nav-item"><a href="#projects" class="nav-link">Proyek</a></li>
-          <li class="nav-item"><a href="#experience" class="nav-link">Pengalaman</a></li>
-          <li class="nav-item"><a href="#testimonials" class="nav-link">Testimoni</a></li>
-          <li class="nav-item"><a href="#contact" class="nav-link">Kontak</a></li>
-        </ul>
-      </nav>
+    <!-- Crosshair in center -->
+    <div id="crosshair"></div>
 
-      <!-- Nav Actions -->
-      <div class="nav-actions">
-        <!-- Live Clock Pill -->
-        <div class="live-clock-pill" id="liveClockBadge" title="Waktu Lokal Pengembang">
-          <span class="clock-dot"></span>
-          <span id="liveClockText">--:-- WIB</span>
-        </div>
-
-        <!-- Palette / Theme Customizer Button -->
-        <button class="icon-btn" id="openCustomizerBtn" title="Kustomisasi Warna & Tema" aria-label="Kustomisasi Tema">
-          <i class="fa-solid fa-palette"></i>
-        </button>
-
-        <!-- Inbox Viewer Button -->
-        <button class="icon-btn inbox-badge-btn" id="openInboxBtn" title="Kotak Masuk Pesan" aria-label="Buka Kotak Masuk">
-          <i class="fa-regular fa-envelope"></i>
-          <span class="badge-count" id="inboxCountBadge">0</span>
-        </button>
-
-        <!-- Dark / Light Mode Toggle Button -->
-        <button class="icon-btn" id="themeToggle" aria-label="Ganti Tema">
-          <i class="fa-solid fa-moon"></i>
-        </button>
-
-        <a href="#contact" class="btn btn-sm btn-primary nav-cta">Sapa Saya</a>
-
-        <!-- Mobile Menu Hamburger -->
-        <button class="menu-toggle" id="menuToggle" aria-label="Buka Menu">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      </div>
+    <!-- Center Interaction Prompt -->
+    <div id="interactPrompt" style="display: none;">
+      <span class="key-badge">E</span>
+      <span id="interactText">Bersembunyi di Loker</span>
     </div>
-  </header>
 
-  <!-- Hero Section -->
-  <section class="hero-section" id="home">
-    <div class="container hero-container">
-      <div class="hero-content">
-        <!-- Dynamic Status Badge -->
-        <div class="badge-status" id="heroStatusBadge">
-          <span class="status-dot"></span>
-          <span id="heroAvailabilityText">Tersedia untuk Pekerjaan Lepas & Kolaborasi</span>
+    <!-- ========================================================= -->
+    <!-- IN-GAME HUD                                               -->
+    <!-- ========================================================= -->
+    <div id="gameHud" style="display: none;">
+      <!-- Top Left: Sanity, Stamina, Battery, Level/EXP -->
+      <div class="hud-top-left">
+        <!-- Sanity (Kewarasan Mental) -->
+        <div class="hud-bar-card">
+          <div class="bar-header">
+            <span><i class="fa-solid fa-brain text-purple"></i> KEWARASAN</span>
+            <span id="sanityText">100%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill sanity-fill" id="sanityBarFill" style="width: 100%;"></div>
+          </div>
         </div>
 
-        <h1 class="hero-title">
-          Halo, Saya <span class="gradient-text" id="heroName">Ari Satriya</span>
-        </h1>
-
-        <!-- Typewriter Effect Subtitle -->
-        <h2 class="hero-subtitle">
-          Saya seorang <span class="typewriter-text gradient-text" id="typewriterText">Frontend Developer</span><span class="typewriter-cursor">|</span>
-        </h2>
-
-        <p class="hero-description" id="heroDescription">
-          Membangun pengalaman web digital yang elegan, interaktif, responsif, dan berkinerja tinggi dengan standar web modern.
-        </p>
-
-        <div class="hero-buttons">
-          <a href="#projects" class="btn btn-primary">
-            <span>Eksplorasi Proyek</span>
-            <i class="fa-solid fa-arrow-right"></i>
-          </a>
-          <a href="#contact" class="btn btn-outline">
-            <i class="fa-regular fa-paper-plane"></i>
-            <span>Mulai Diskusi</span>
-          </a>
+        <!-- Stamina -->
+        <div class="hud-bar-card">
+          <div class="bar-header">
+            <span><i class="fa-solid fa-person-running text-cyan"></i> STAMINA</span>
+            <span id="staminaText">100%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill stamina-fill" id="staminaBarFill" style="width: 100%;"></div>
+          </div>
         </div>
 
-        <div class="hero-socials">
-          <span class="social-label">Temukan Saya di:</span>
-          <div class="social-links" id="heroSocialsContainer">
-            <!-- Dynamic Social Links -->
+        <!-- Senter & Baterai -->
+        <div class="hud-bar-card">
+          <div class="bar-header">
+            <span><i class="fa-solid fa-flashlight text-yellow"></i> BATERAI SENTER</span>
+            <span id="batteryText">100%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill battery-fill" id="batteryBarFill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Level & EXP Badge -->
+        <div class="level-badge-box">
+          <span class="player-lvl" id="hudPlayerLevel">LEVEL 1</span>
+          <div class="exp-track">
+            <div class="exp-fill" id="hudExpFill" style="width: 0%;"></div>
+          </div>
+          <span class="exp-text" id="hudExpText">EXP 0 / 150</span>
+        </div>
+      </div>
+
+      <!-- Top Center: Objectives & Key Items -->
+      <div class="hud-top-center">
+        <div class="objective-card">
+          <div class="objective-header">
+            <i class="fa-solid fa-crosshairs text-yellow"></i>
+            <span id="objectiveTitle">LEVEL 0: THE YELLOW LOBBY</span>
+          </div>
+          <div class="objective-items">
+            <span class="obj-item" id="tapeCountBadge">
+              <i class="fa-solid fa-tape"></i> Kaset: <strong id="tapeCountText">0 / 3</strong>
+            </span>
+            <span class="obj-item" id="keycardBadge">
+              <i class="fa-solid fa-id-card"></i> Keycard: <strong id="keycardText">BELUM ADA</strong>
+            </span>
           </div>
         </div>
       </div>
 
-      <div class="hero-visual">
-        <div class="avatar-card">
-          <div class="avatar-glow"></div>
-          <div class="avatar-wrapper">
-            <img src="" alt="Foto Profil" class="avatar-img" id="heroAvatarImg" />
+      <!-- Top Right: Co-op Status & Audio Controls -->
+      <div class="hud-top-right">
+        <!-- Co-op Teammate Card -->
+        <div class="teammate-status-card" id="teammateCard">
+          <div class="mate-header">
+            <span class="mate-badge"><i class="fa-solid fa-user-group"></i> TEMAN CO-OP</span>
+            <span class="mate-dist" id="mateDistance">-- m</span>
           </div>
-          <div class="floating-badge badge-top">
-            <i class="fa-brands fa-react text-cyan"></i>
-            <div>
-              <strong>Dynamic UI</strong>
-              <small>Data-Driven App</small>
-            </div>
-          </div>
-          <div class="floating-badge badge-bottom">
-            <i class="fa-solid fa-code text-indigo"></i>
-            <div>
-              <strong>Clean Code</strong>
-              <small>Pixel Perfect</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- About Section -->
-  <section class="section about-section" id="about">
-    <div class="container">
-      <div class="section-header text-center">
-        <span class="section-tag">TENTANG SAYA</span>
-        <h2 class="section-title">Mengenal Lebih Dekat</h2>
-        <p class="section-subtitle">Kombinasi antara logika pemrograman komprehensif dan sentuhan estetika visual.</p>
-      </div>
-
-      <div class="about-grid">
-        <div class="about-image-col">
-          <div class="about-img-box">
-            <img src="" alt="Workspace Coding" class="about-img" id="aboutImg" />
-            <div class="experience-card">
-              <span class="exp-number" id="aboutExpNumber">3+</span>
-              <span class="exp-text">Tahun Dedikasi Coding</span>
-            </div>
-          </div>
+          <div class="mate-state" id="mateStateText">MENUNGGU TEMAN...</div>
         </div>
 
-        <div class="about-content-col">
-          <h3>Menciptakan Solusi Web yang Menarik, Terukur dan Berdampak</h3>
-          <p>
-            Saya adalah seorang developer yang bersemangat dalam mengubah konsep dan ide kreatif menjadi website yang cepat, ramah pengguna, dan fungsional. Terbiasa mengelola arsitektur data dinamis, API interaktif, dan animasi mikro yang memanjakan mata.
-          </p>
-          <p>
-            Fokus utama saya adalah memastikan setiap antarmuka yang dibuat tidak hanya enak dipandang (UI), tetapi juga memberikan alur interaksi yang intuitif dan nyaman bagi pengguna (UX).
-          </p>
-
-          <div class="info-details-grid" id="aboutInfoGrid">
-            <!-- Dynamic Info Items -->
-          </div>
-
-          <div class="about-cta">
-            <a href="#contact" class="btn btn-primary">
-              <i class="fa-solid fa-paper-plane"></i>
-              <span>Ayo Berkolaborasi</span>
-            </a>
-            <button class="btn btn-outline" id="downloadCvBtn">
-              <i class="fa-solid fa-download"></i>
-              <span>Download CV</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Animated Stats Row (Numbers Count Up Automatically) -->
-      <div class="stats-row" id="statsRowContainer">
-        <!-- Rendered Dynamically -->
-      </div>
-    </div>
-  </section>
-
-  <!-- Services Section -->
-  <section class="section services-section" id="services">
-    <div class="container">
-      <div class="section-header text-center">
-        <span class="section-tag">LAYANAN KAMI</span>
-        <h2 class="section-title">Apa yang Bisa Saya Bantu?</h2>
-        <p class="section-subtitle">Solusi pengembangan website dan desain profesional untuk mendukung bisnis Anda.</p>
-      </div>
-
-      <div class="services-grid" id="servicesGrid">
-        <!-- Rendered Dynamically -->
-      </div>
-    </div>
-  </section>
-
-  <!-- Skills Section -->
-  <section class="section skills-section" id="skills">
-    <div class="container">
-      <div class="section-header text-center">
-        <span class="section-tag">KEAHLIAN &amp; TOOLS</span>
-        <h2 class="section-title">Teknologi yang Saya Kuasai</h2>
-        <p class="section-subtitle">Daftar kemampuan teknis dan alat bantu yang mendukung alur kerja pengembangan web saya.</p>
-      </div>
-
-      <div class="skills-grid" id="skillsGrid">
-        <!-- Rendered Dynamically with Animated Progress Bars -->
-      </div>
-    </div>
-  </section>
-
-  <!-- Projects Section (Dynamic Search, Filter, Modal) -->
-  <section class="section projects-section" id="projects">
-    <div class="container">
-      <div class="section-header text-center">
-        <span class="section-tag">KARYA PILIHAN</span>
-        <h2 class="section-title">Portofolio Proyek Dinamis</h2>
-        <p class="section-subtitle">Filter berdasarkan kategori atau ketik di kotak pencarian untuk mencari proyek secara instan.</p>
-      </div>
-
-      <!-- Live Search & Filter Bar -->
-      <div class="projects-control-bar">
-        <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" id="projectSearchInput" placeholder="Cari nama proyek, teknologi (misal: React, LocalStorage, Figma)..." />
-          <button class="clear-search-btn" id="clearSearchBtn" title="Hapus Pencarian">&times;</button>
-        </div>
-
-        <!-- Filter Category Tabs -->
-        <div class="project-filters" id="projectFiltersContainer">
-          <!-- Rendered Dynamically with Counts -->
-        </div>
-
-        <!-- Active Filter / Result Count Indicator -->
-        <div class="project-count-indicator" id="projectCountIndicator">
-          Menampilkan seluruh proyek
-        </div>
-      </div>
-
-      <!-- Dynamic Projects Grid -->
-      <div class="projects-grid" id="projectsGrid">
-        <!-- Rendered Dynamically -->
-      </div>
-
-      <!-- Empty State for Search -->
-      <div class="empty-state" id="projectsEmptyState" style="display: none;">
-        <i class="fa-solid fa-magnifying-glass-chart empty-icon"></i>
-        <h3>Tidak ada proyek yang cocok</h3>
-        <p>Coba gunakan kata kunci pencarian lain atau pilih kategori "Semua".</p>
-        <button class="btn btn-sm btn-outline" id="resetSearchBtn">Reset Pencarian</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Timeline / Experience Section -->
-  <section class="section experience-section" id="experience">
-    <div class="container">
-      <div class="section-header text-center">
-        <span class="section-tag">JEJAK LANGKAH</span>
-        <h2 class="section-title">Riwayat Pengalaman &amp; Edukasi</h2>
-        <p class="section-subtitle">Perjalanan karir dan pendidikan yang membentuk keahlian saya hingga saat ini.</p>
-      </div>
-
-      <div class="timeline" id="timelineContainer">
-        <!-- Rendered Dynamically -->
-      </div>
-    </div>
-  </section>
-
-  <!-- Testimonials Carousel Section -->
-  <section class="section testimonials-section" id="testimonials">
-    <div class="container">
-      <div class="section-header text-center">
-        <span class="section-tag">APA KATA MEREKA</span>
-        <h2 class="section-title">Testimoni &amp; Ulasan Klien</h2>
-        <p class="section-subtitle">Kepercayaan dan kepuasan mitra kolaborasi terhadap hasil kerja saya.</p>
-      </div>
-
-      <div class="testimonial-slider-wrapper">
-        <div class="testimonial-track" id="testimonialTrack">
-          <!-- Rendered Dynamically -->
-        </div>
-
-        <div class="slider-controls">
-          <button class="slider-btn" id="prevTestimonialBtn" aria-label="Sebelumnya">
-            <i class="fa-solid fa-arrow-left"></i>
+        <!-- Audio Toggle & Walkie-Talkie Voice Toggle -->
+        <div class="hud-buttons-row">
+          <button class="hud-icon-btn" id="voiceToggleBtn" title="Walkie-Talkie Voice Chat P2P">
+            <i class="fa-solid fa-microphone-slash"></i>
           </button>
-          <div class="slider-dots" id="testimonialDots">
-            <!-- Dynamic Dots -->
-          </div>
-          <button class="slider-btn" id="nextTestimonialBtn" aria-label="Selanjutnya">
-            <i class="fa-solid fa-arrow-right"></i>
+          <button class="hud-icon-btn" id="audioToggleBtn" title="Suara On/Off">
+            <i class="fa-solid fa-volume-high"></i>
           </button>
         </div>
       </div>
-    </div>
-  </section>
 
-  <!-- Contact Section -->
-  <section class="section contact-section" id="contact">
-    <div class="container">
-      <div class="section-header text-center">
-        <span class="section-tag">HUBUNGI SAYA</span>
-        <h2 class="section-title">Mari Wujudkan Proyek Anda</h2>
-        <p class="section-subtitle">Punya proyek menarik atau tawaran kerja? Kirim pesan dan mari kita wujudkan bersama.</p>
-      </div>
+      <!-- Bottom Center: Skills & Items Quick Bar -->
+      <div class="hud-bottom-center">
+        <!-- Skills Row -->
+        <div class="skills-row">
+          <!-- Skill 1: Sixth Sense -->
+          <div class="skill-box" id="skillSixthSense">
+            <div class="skill-key">Q</div>
+            <i class="fa-solid fa-eye"></i>
+            <span class="skill-name">Insting</span>
+            <div class="cooldown-overlay" id="cdSixthSense"></div>
+          </div>
 
-      <div class="contact-wrapper">
-        <!-- Dynamic Contact Info Cards -->
-        <div class="contact-info-col" id="contactInfoContainer">
-          <!-- Rendered Dynamically -->
+          <!-- Skill 2: Ghost Step -->
+          <div class="skill-box" id="skillGhostStep">
+            <div class="skill-key">Z</div>
+            <i class="fa-solid fa-shoe-prints"></i>
+            <span class="skill-name">Langkah Hantu</span>
+            <div class="cooldown-overlay" id="cdGhostStep"></div>
+          </div>
+
+          <!-- Skill 3: Sound Decoy -->
+          <div class="skill-box" id="skillDecoy">
+            <div class="skill-key">X</div>
+            <i class="fa-solid fa-bullhorn"></i>
+            <span class="skill-name">Umpan</span>
+            <div class="cooldown-overlay" id="cdDecoy"></div>
+          </div>
         </div>
 
-        <!-- Contact Form -->
-        <div class="contact-form-col">
-          <form class="contact-form" id="contactForm">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="name">Nama Lengkap <span class="required">*</span></label>
-                <input type="text" id="name" name="name" placeholder="Misal: Budi Santoso" required />
+        <!-- Inventory Quick Slots -->
+        <div class="items-row">
+          <div class="item-slot" id="slotBattery" title="Pakai Baterai Senter (Tekan 1)">
+            <span class="slot-num">1</span>
+            <i class="fa-solid fa-car-battery text-yellow"></i>
+            <span class="item-qty" id="qtyBattery">x2</span>
+          </div>
+          <div class="item-slot" id="slotAlmond" title="Minum Air Almond (Pulihkan Sanity) (Tekan 2)">
+            <span class="slot-num">2</span>
+            <i class="fa-solid fa-bottle-water text-cyan"></i>
+            <span class="item-qty" id="qtyAlmond">x1</span>
+          </div>
+          <div class="item-slot" id="slotAdrenaline" title="Suntik Adrenalin (Lari Cepat) (Tekan 3)">
+            <span class="slot-num">3</span>
+            <i class="fa-solid fa-syringe text-purple"></i>
+            <span class="item-qty" id="qtyAdrenaline">x1</span>
+          </div>
+        </div>
+
+        <!-- Controls Hint Banner -->
+        <div class="controls-hint-bar">
+          <span><kbd>E</kbd> Sembunyi / Aksi</span>
+          <span><kbd>F</kbd> Senter</span>
+          <span><kbd>C</kbd> Jongkok</span>
+          <span><kbd>V</kbd> Ping Penanda</span>
+          <span><kbd>TAB</kbd> Menu Atribut &amp; Skill</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- LOCKER HIDING OVERLAY (Inside Locker View)                -->
+    <!-- ========================================================= -->
+    <div id="lockerOverlay" style="display: none;">
+      <!-- Metal Louver Grate Frame -->
+      <div class="locker-grate-bars"></div>
+
+      <!-- Breathing & Heartbeat Indicator -->
+      <div class="locker-breath-widget">
+        <div class="heartbeat-pulse-icon" id="lockerHeartIcon">
+          <i class="fa-solid fa-heart-pulse"></i>
+        </div>
+        <div class="breath-instruction">
+          <kbd>TAHAN SPACE</kbd> MENAHAN NAPAS!
+        </div>
+        <div class="breath-bar-track">
+          <div class="breath-bar-fill" id="breathBarFill" style="width: 100%;"></div>
+        </div>
+        <div class="sniff-warning" id="sniffWarning" style="display: none;">
+          <i class="fa-solid fa-triangle-exclamation"></i> ENTITAS SEDANG MENGENDUS LOKER!
+        </div>
+      </div>
+
+      <button class="btn-exit-locker" id="exitLockerBtn">
+        <kbd>E</kbd> KELUAR DARI LOKER
+      </button>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- REVIVE CHANNELING OVERLAY (Holding [E] on Teammate)       -->
+    <!-- ========================================================= -->
+    <div id="reviveProgressContainer" style="display: none;">
+      <div class="revive-channel-card">
+        <div class="revive-spinner"><i class="fa-solid fa-hand-holding-medical"></i></div>
+        <div class="revive-channel-info">
+          <span class="revive-channel-title">MENYELAMATKAN TEMAN...</span>
+          <div class="revive-channel-bar-track">
+            <div class="revive-channel-bar-fill" id="reviveChannelFill" style="width: 0%;"></div>
+          </div>
+          <span class="revive-channel-hint">TAHAN [E] SAMPAI PENUH</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- DOWNED / REVIVE OVERLAY (When Caught in Co-op)             -->
+    <!-- ========================================================= -->
+    <div id="downedOverlay" style="display: none;">
+      <div class="downed-card">
+        <i class="fa-solid fa-skull-crossbones downed-icon"></i>
+        <h2>ANDA PINGSAN!</h2>
+        <p>Anda diserang oleh entitas! Tunggu teman Anda untuk menyelamatkan (*Revive*).</p>
+        <div class="downed-timer-bar">
+          <div class="downed-timer-fill" id="downedTimerFill" style="width: 100%;"></div>
+        </div>
+        <span class="downed-countdown" id="downedCountdownText">Waktu Tersisa: 45 detik</span>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- START / LOBBY & CO-OP SETUP MODAL                         -->
+    <!-- ========================================================= -->
+    <div id="startScreen">
+      <div class="start-modal">
+        <div class="horror-title-banner">
+          <div class="liminal-tag"><i class="fa-solid fa-door-open"></i> LEVEL 0: THE YELLOW LOBBY</div>
+          <h1 class="horror-title">ESCAPE THE BACKROOMS</h1>
+          <p class="horror-subtitle">3D Psychological Survival Horror &amp; Co-op Multiplayer</p>
+        </div>
+
+        <div class="mode-selection-grid">
+          <!-- Option A: Solo Survival -->
+          <div class="mode-card" id="btnModeSolo">
+            <div class="mode-icon text-yellow"><i class="fa-solid fa-user"></i></div>
+            <h3>MAIN SENDIRI (SOLO)</h3>
+            <p>Jelajahi labirin liminal sendirian. Bersembunyi di loker dan lari dari kejaran The Bacteria.</p>
+            <button class="btn-mode-select">MASUK SENDIRIAN</button>
+          </div>
+
+          <!-- Option B: Host Co-op -->
+          <div class="mode-card" id="btnModeHost">
+            <div class="mode-icon text-cyan"><i class="fa-solid fa-tower-broadcast"></i></div>
+            <h3>HOST CO-OP ROOM</h3>
+            <p>Buat kode ruangan dan bagikan ke teman Anda untuk menjelajahi Backrooms bersama secara online.</p>
+            <button class="btn-mode-select">BUAT ROOM CO-OP</button>
+          </div>
+
+          <!-- Option C: Join Co-op -->
+          <div class="mode-card" id="btnModeJoin">
+            <div class="mode-icon text-purple"><i class="fa-solid fa-satellite-dish"></i></div>
+            <h3>GABUNG ROOM TEMAN</h3>
+            <p>Masukkan Room Code yang diberikan teman Anda untuk langsung masuk ke dunianya.</p>
+            <div class="join-input-group">
+              <input type="text" id="joinRoomCodeInput" placeholder="Contoh: ROOM-778" />
+              <button class="btn-mode-select" id="btnConfirmJoin">GABUNG</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Room Code Display (When Hosting) -->
+        <div class="room-code-display-banner" id="roomCodeDisplayBanner" style="display: none;">
+          <span>KODE RUANGAN ANDA:</span>
+          <strong id="myRoomCodeText">MEMBUAT KODE...</strong>
+          <button class="btn-copy-code" id="btnCopyCode"><i class="fa-solid fa-copy"></i> SALIN KODE</button>
+          <p class="waiting-hint">Bagikan kode ini ke teman Anda. Game akan otomatis mulai saat teman terhubung!</p>
+          <button class="btn-start-anyway" id="btnStartAnyway">Mulai Balapan Bertahan Hidup Sekarang</button>
+        </div>
+
+        <div class="lore-instructions">
+          <h4><i class="fa-solid fa-triangle-exclamation text-yellow"></i> PETUNJUK KELANGSUNGAN HIDUP:</h4>
+          <ul>
+            <li><strong>Loker Besi:</strong> Saat entitas mendekat, segera tekan <kbd>E</kbd> masuk ke loker dan tahan <kbd>SPACE</kbd> untuk menahan napas.</li>
+            <li><strong>Baterai Senter:</strong> Senter Anda akan berkedip saat ada entitas di dekat Anda. Hemat baterai atau cari baterai cadangan.</li>
+            <li><strong>Peningkatan Karakter:</strong> Dapatkan EXP dengan bertahan hidup, lalu tekan <kbd>TAB</kbd> untuk menaikkan kapasitas stamina &amp; kewarasan.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- ATTRIBUTES & SKILLS UPGRADE MODAL (Press 'TAB')            -->
+    <!-- ========================================================= -->
+    <div id="upgradeModal" style="display: none;">
+      <div class="upgrade-card">
+        <div class="upgrade-header">
+          <div class="upgrade-title-box">
+            <i class="fa-solid fa-dna text-purple"></i>
+            <h2>ATRIBUT &amp; SKILL SURVIVOR</h2>
+          </div>
+          <button class="modal-close-btn" id="closeUpgradeModalBtn">&times;</button>
+        </div>
+
+        <div class="upgrade-body">
+          <div class="points-banner">
+            <span>Poin Atribut Tersedia:</span>
+            <strong id="upgradeStatPoints">0 Poin</strong>
+          </div>
+
+          <div class="attributes-list">
+            <!-- Stat 1: Lungs & Stamina -->
+            <div class="attr-row">
+              <div class="attr-icon text-cyan"><i class="fa-solid fa-lungs"></i></div>
+              <div class="attr-info">
+                <h4>Kapasitas Paru-paru (Stamina &amp; Tahan Napas)</h4>
+                <p>Memperpanjang lari sprint dan durasi menahan napas di dalam loker.</p>
+                <div class="attr-stat-val">Level: <strong id="valLungsLevel">1</strong> (+100 Stamina)</div>
               </div>
-              <div class="form-group">
-                <label for="email">Alamat Email <span class="required">*</span></label>
-                <input type="email" id="email" name="email" placeholder="nama@domain.com" required />
+              <button class="btn-attr-upgrade" data-stat="lungs">+ Naikkan</button>
+            </div>
+
+            <!-- Stat 2: Mental Fortitude / Sanity -->
+            <div class="attr-row">
+              <div class="attr-icon text-purple"><i class="fa-solid fa-brain"></i></div>
+              <div class="attr-info">
+                <h4>Kekuatan Mental (Sanity &amp; Ketahanan Takut)</h4>
+                <p>Kewarasan berkurang lebih lambat di kegelapan dan halusinasi berkurang.</p>
+                <div class="attr-stat-val">Level: <strong id="valMentalLevel">1</strong> (+100 Sanity)</div>
               </div>
+              <button class="btn-attr-upgrade" data-stat="mental">+ Naikkan</button>
             </div>
 
-            <div class="form-group">
-              <label for="subject">Subjek Pesan <span class="required">*</span></label>
-              <input type="text" id="subject" name="subject" placeholder="Tawaran Proyek Website / Konsultasi" required />
+            <!-- Stat 3: Stealth Agility -->
+            <div class="attr-row">
+              <div class="attr-icon text-green"><i class="fa-solid fa-shoe-prints"></i></div>
+              <div class="attr-info">
+                <h4>Langkah Hening (Stealth &amp; Kecepatan)</h4>
+                <p>Suara langkah kaki lebih senyap dan kecepatan jalan meningkat.</p>
+                <div class="attr-stat-val">Level: <strong id="valStealthLevel">1</strong> (Radius Suara: Normal)</div>
+              </div>
+              <button class="btn-attr-upgrade" data-stat="stealth">+ Naikkan</button>
             </div>
 
-            <div class="form-group">
-              <label for="message">Pesan Anda <span class="required">*</span></label>
-              <textarea id="message" name="message" rows="5" placeholder="Ceritakan ide, kebutuhan fitur, atau pertanyaan Anda..." required></textarea>
+            <!-- Stat 4: Perception & Battery -->
+            <div class="attr-row">
+              <div class="attr-icon text-yellow"><i class="fa-solid fa-eye"></i></div>
+              <div class="attr-info">
+                <h4>Persepsi &amp; Efisiensi Baterai</h4>
+                <p>Baterai senter lebih hemat dan jangkauan deteksi entitas lebih jauh.</p>
+                <div class="attr-stat-val">Level: <strong id="valPerceptionLevel">1</strong> (Konsumsi Baterai: Normal)</div>
+              </div>
+              <button class="btn-attr-upgrade" data-stat="perception">+ Naikkan</button>
             </div>
+          </div>
+        </div>
 
-            <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
-              <i class="fa-solid fa-paper-plane"></i>
-              <span>Kirim Pesan Sekarang</span>
-            </button>
-          </form>
+        <div class="upgrade-footer">
+          <button class="btn-primary-action" id="dismissUpgradeModalBtn">Lanjutkan Bertahan Hidup</button>
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- ============================================================= -->
-  <!-- MODAL 1: PROJECT DETAIL POPUP                                  -->
-  <!-- ============================================================= -->
-  <div class="modal-overlay" id="projectModal">
-    <div class="modal-box modal-lg">
-      <button class="modal-close" id="closeProjectModalBtn" aria-label="Tutup Modal">&times;</button>
-      
-      <div class="modal-body" id="projectModalBody">
-        <!-- Injected dynamically from script.js -->
+    <!-- ========================================================= -->
+    <!-- ESCAPE / VICTORY MODAL                                     -->
+    <!-- ========================================================= -->
+    <div id="escapeModal" style="display: none;">
+      <div class="escape-card">
+        <i class="fa-solid fa-door-open escape-icon"></i>
+        <h2>NO-CLIP BERHASIL!</h2>
+        <p>Anda berhasil meloloskan diri dari Level 0 Backrooms menuju Level berikutnya!</p>
+        <div class="escape-stats">
+          <div>Waktu Bertahan: <strong id="escTime">00:00</strong></div>
+          <div>Kaset Ditemukan: <strong>3 / 3</strong></div>
+          <div>Level Akhir: <strong id="escLevel">Lv. 3</strong></div>
+        </div>
+        <button class="btn-primary-action" id="btnRestartGame">Mainkan Ulang</button>
       </div>
     </div>
+
+    <!-- Jumpscare Scream Effect -->
+    <div id="jumpscareOverlay" style="display: none;">
+      <div class="jumpscare-face"></div>
+    </div>
+
   </div>
 
-  <!-- ============================================================= -->
-  <!-- MODAL 2: INBOX / KOTAK MASUK VIEWER                            -->
-  <!-- ============================================================= -->
-  <div class="modal-overlay" id="inboxModal">
-    <div class="modal-box modal-md">
-      <div class="modal-header">
-        <div class="modal-header-title">
-          <i class="fa-regular fa-envelope text-primary"></i>
-          <h3>Kotak Masuk Pesan Lokal</h3>
-        </div>
-        <button class="modal-close" id="closeInboxModalBtn" aria-label="Tutup">&times;</button>
-      </div>
-
-      <div class="modal-body">
-        <p class="modal-hint">Semua pesan dari form kontak tersimpan dinamis di LocalStorage browser ini.</p>
-        <div class="inbox-list" id="inboxListContainer">
-          <!-- Injected dynamically -->
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-sm btn-outline text-danger" id="clearInboxBtn">
-          <i class="fa-solid fa-trash-can"></i> Hapus Semua Pesan
-        </button>
-        <button class="btn btn-sm btn-primary" id="dismissInboxModalBtn">Tutup</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================= -->
-  <!-- DRAWER: THEME & COLOR CUSTOMIZER                              -->
-  <!-- ============================================================= -->
-  <div class="customizer-drawer" id="customizerDrawer">
-    <div class="customizer-header">
-      <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Pengatur Tampilan</h4>
-      <button class="drawer-close" id="closeCustomizerBtn">&times;</button>
-    </div>
-
-    <div class="customizer-content">
-      <div class="customizer-section">
-        <h5>Mode Tampilan</h5>
-        <div class="mode-toggle-group">
-          <button class="mode-btn" data-theme-choice="dark" id="themeChoiceDark">
-            <i class="fa-solid fa-moon"></i> Gelap
-          </button>
-          <button class="mode-btn" data-theme-choice="light" id="themeChoiceLight">
-            <i class="fa-solid fa-sun"></i> Terang
-          </button>
-        </div>
-      </div>
-
-      <div class="customizer-section">
-        <h5>Warna Aksen Utama</h5>
-        <p class="customizer-hint">Pilih warna favorit Anda untuk mengubah tema seluruh website secara instan:</p>
-        <div class="palette-swatches" id="paletteSwatchesContainer">
-          <!-- Rendered Dynamically from data.colorPalettes -->
-        </div>
-      </div>
-
-      <div class="customizer-section">
-        <button class="btn btn-sm btn-outline btn-block" id="resetCustomizerBtn">
-          <i class="fa-solid fa-rotate-left"></i> Reset ke Standar
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Floating Toast Notification -->
-  <div class="toast" id="toast">
-    <i class="fa-solid fa-circle-check toast-icon"></i>
-    <div class="toast-content">
-      <h5 class="toast-title">Pesan Terkirim!</h5>
-      <p class="toast-msg">Terima kasih atas pesan Anda.</p>
-    </div>
-  </div>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container footer-container">
-      <div class="footer-brand">
-        <a href="#home" class="footer-logo">
-          <span class="logo-symbol">&lt;/&gt;</span>
-          <span id="footerBrandName">Ari<span>Dev</span></span>
-        </a>
-        <p id="footerBrandDesc">Membantu mewujudkan pengalaman digital interaktif dan dinamis yang memukau dan berdaya guna.</p>
-      </div>
-
-      <div class="footer-links">
-        <h4>Navigasi Cepat</h4>
-        <ul>
-          <li><a href="#home">Beranda</a></li>
-          <li><a href="#about">Tentang</a></li>
-          <li><a href="#services">Layanan</a></li>
-          <li><a href="#skills">Keahlian</a></li>
-          <li><a href="#projects">Proyek</a></li>
-          <li><a href="#contact">Kontak</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-socials">
-        <h4>Sosial Media</h4>
-        <div class="social-links" id="footerSocialsContainer">
-          <!-- Dynamic Socials -->
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <div class="container footer-bottom-container">
-        <p>&copy; <span id="currentYear"></span> <span id="footerCopyrightName">Ari Satriya</span>. Dibuat dinamis dengan Vanilla HTML, CSS &amp; JavaScript.</p>
-        <a href="#home" class="back-to-top" id="backToTop" aria-label="Kembali ke atas">
-          <i class="fa-solid fa-arrow-up"></i>
-        </a>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Scripts: 1. Data File, 2. Interactive Engine -->
-  <script src="data.js"></script>
-  <script src="script.js"></script>
+  <!-- Game Engine Script -->
+  <script src="backrooms.js"></script>
 </body>
 </html>

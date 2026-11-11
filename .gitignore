@@ -1,0 +1,8 @@
+# Non-backrooms files ignored from Git tracking
+minecraft.*
+racing.*
+game.*
+style.css
+script.js
+data.js
+portfolio.html
