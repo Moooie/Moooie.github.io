@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portofolio Pribadi Dinamis | Web Developer & Designer</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Decorative Background Glows -->
+  <div class="blob-bg blob-1"></div>
+  <div class="blob-bg blob-2"></div>
+
+  <!-- Navbar -->
+  <header class="navbar" id="navbar">
+    <div class="container nav-container">
+      <a href="#home" class="nav-logo" id="navLogo">
+        <span class="logo-symbol">&lt;/&gt;</span>
+        <span class="logo-text">Ari<span>Dev</span></span>
+      </a>
+
+      <!-- Desktop Nav Menu -->
+      <nav class="nav-menu" id="navMenu">
+        <ul class="nav-list">
+          <li class="nav-item"><a href="#home" class="nav-link active">Beranda</a></li>
+          <li class="nav-item"><a href="#about" class="nav-link">Tentang</a></li>
+          <li class="nav-item"><a href="#services" class="nav-link">Layanan</a></li>
+          <li class="nav-item"><a href="#skills" class="nav-link">Keahlian</a></li>
+          <li class="nav-item"><a href="#projects" class="nav-link">Proyek</a></li>
+          <li class="nav-item"><a href="#experience" class="nav-link">Pengalaman</a></li>
+          <li class="nav-item"><a href="#testimonials" class="nav-link">Testimoni</a></li>
+          <li class="nav-item"><a href="#contact" class="nav-link">Kontak</a></li>
+        </ul>
+      </nav>
+
+      <!-- Nav Actions -->
+      <div class="nav-actions">
+        <!-- Live Clock Pill -->
+        <div class="live-clock-pill" id="liveClockBadge" title="Waktu Lokal Pengembang">
+          <span class="clock-dot"></span>
+          <span id="liveClockText">--:-- WIB</span>
+        </div>
+
+        <!-- Palette / Theme Customizer Button -->
+        <button class="icon-btn" id="openCustomizerBtn" title="Kustomisasi Warna & Tema" aria-label="Kustomisasi Tema">
+          <i class="fa-solid fa-palette"></i>
+        </button>
+
+        <!-- Inbox Viewer Button -->
+        <button class="icon-btn inbox-badge-btn" id="openInboxBtn" title="Kotak Masuk Pesan" aria-label="Buka Kotak Masuk">
+          <i class="fa-regular fa-envelope"></i>
+          <span class="badge-count" id="inboxCountBadge">0</span>
+        </button>
+
+        <!-- Dark / Light Mode Toggle Button -->
+        <button class="icon-btn" id="themeToggle" aria-label="Ganti Tema">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+
+        <a href="#contact" class="btn btn-sm btn-primary nav-cta">Sapa Saya</a>
+
+        <!-- Mobile Menu Hamburger -->
+        <button class="menu-toggle" id="menuToggle" aria-label="Buka Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section" id="home">
+    <div class="container hero-container">
+      <div class="hero-content">
+        <!-- Dynamic Status Badge -->
+        <div class="badge-status" id="heroStatusBadge">
+          <span class="status-dot"></span>
+          <span id="heroAvailabilityText">Tersedia untuk Pekerjaan Lepas & Kolaborasi</span>
+        </div>
+
+        <h1 class="hero-title">
+          Halo, Saya <span class="gradient-text" id="heroName">Ari Satriya</span>
+        </h1>
+
+        <!-- Typewriter Effect Subtitle -->
+        <h2 class="hero-subtitle">
+          Saya seorang <span class="typewriter-text gradient-text" id="typewriterText">Frontend Developer</span><span class="typewriter-cursor">|</span>
+        </h2>
+
+        <p class="hero-description" id="heroDescription">
+          Membangun pengalaman web digital yang elegan, interaktif, responsif, dan berkinerja tinggi dengan standar web modern.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="#projects" class="btn btn-primary">
+            <span>Eksplorasi Proyek</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </a>
+          <a href="#contact" class="btn btn-outline">
+            <i class="fa-regular fa-paper-plane"></i>
+            <span>Mulai Diskusi</span>
+          </a>
+        </div>
+
+        <div class="hero-socials">
+          <span class="social-label">Temukan Saya di:</span>
+          <div class="social-links" id="heroSocialsContainer">
+            <!-- Dynamic Social Links -->
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="avatar-card">
+          <div class="avatar-glow"></div>
+          <div class="avatar-wrapper">
+            <img src="" alt="Foto Profil" class="avatar-img" id="heroAvatarImg" />
+          </div>
+          <div class="floating-badge badge-top">
+            <i class="fa-brands fa-react text-cyan"></i>
+            <div>
+              <strong>Dynamic UI</strong>
+              <small>Data-Driven App</small>
+            </div>
+          </div>
+          <div class="floating-badge badge-bottom">
+            <i class="fa-solid fa-code text-indigo"></i>
+            <div>
+              <strong>Clean Code</strong>
+              <small>Pixel Perfect</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section class="section about-section" id="about">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">TENTANG SAYA</span>
+        <h2 class="section-title">Mengenal Lebih Dekat</h2>
+        <p class="section-subtitle">Kombinasi antara logika pemrograman komprehensif dan sentuhan estetika visual.</p>
+      </div>
+
+      <div class="about-grid">
+        <div class="about-image-col">
+          <div class="about-img-box">
+            <img src="" alt="Workspace Coding" class="about-img" id="aboutImg" />
+            <div class="experience-card">
+              <span class="exp-number" id="aboutExpNumber">3+</span>
+              <span class="exp-text">Tahun Dedikasi Coding</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-content-col">
+          <h3>Menciptakan Solusi Web yang Menarik, Terukur dan Berdampak</h3>
+          <p>
+            Saya adalah seorang developer yang bersemangat dalam mengubah konsep dan ide kreatif menjadi website yang cepat, ramah pengguna, dan fungsional. Terbiasa mengelola arsitektur data dinamis, API interaktif, dan animasi mikro yang memanjakan mata.
+          </p>
+          <p>
+            Fokus utama saya adalah memastikan setiap antarmuka yang dibuat tidak hanya enak dipandang (UI), tetapi juga memberikan alur interaksi yang intuitif dan nyaman bagi pengguna (UX).
+          </p>
+
+          <div class="info-details-grid" id="aboutInfoGrid">
+            <!-- Dynamic Info Items -->
+          </div>
+
+          <div class="about-cta">
+            <a href="#contact" class="btn btn-primary">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Ayo Berkolaborasi</span>
+            </a>
+            <button class="btn btn-outline" id="downloadCvBtn">
+              <i class="fa-solid fa-download"></i>
+              <span>Download CV</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animated Stats Row (Numbers Count Up Automatically) -->
+      <div class="stats-row" id="statsRowContainer">
+        <!-- Rendered Dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Services Section -->
+  <section class="section services-section" id="services">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">LAYANAN KAMI</span>
+        <h2 class="section-title">Apa yang Bisa Saya Bantu?</h2>
+        <p class="section-subtitle">Solusi pengembangan website dan desain profesional untuk mendukung bisnis Anda.</p>
+      </div>
+
+      <div class="services-grid" id="servicesGrid">
+        <!-- Rendered Dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Skills Section -->
+  <section class="section skills-section" id="skills">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">KEAHLIAN &amp; TOOLS</span>
+        <h2 class="section-title">Teknologi yang Saya Kuasai</h2>
+        <p class="section-subtitle">Daftar kemampuan teknis dan alat bantu yang mendukung alur kerja pengembangan web saya.</p>
+      </div>
+
+      <div class="skills-grid" id="skillsGrid">
+        <!-- Rendered Dynamically with Animated Progress Bars -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Section (Dynamic Search, Filter, Modal) -->
+  <section class="section projects-section" id="projects">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">KARYA PILIHAN</span>
+        <h2 class="section-title">Portofolio Proyek Dinamis</h2>
+        <p class="section-subtitle">Filter berdasarkan kategori atau ketik di kotak pencarian untuk mencari proyek secara instan.</p>
+      </div>
+
+      <!-- Live Search & Filter Bar -->
+      <div class="projects-control-bar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="projectSearchInput" placeholder="Cari nama proyek, teknologi (misal: React, LocalStorage, Figma)..." />
+          <button class="clear-search-btn" id="clearSearchBtn" title="Hapus Pencarian">&times;</button>
+        </div>
+
+        <!-- Filter Category Tabs -->
+        <div class="project-filters" id="projectFiltersContainer">
+          <!-- Rendered Dynamically with Counts -->
+        </div>
+
+        <!-- Active Filter / Result Count Indicator -->
+        <div class="project-count-indicator" id="projectCountIndicator">
+          Menampilkan seluruh proyek
+        </div>
+      </div>
+
+      <!-- Dynamic Projects Grid -->
+      <div class="projects-grid" id="projectsGrid">
+        <!-- Rendered Dynamically -->
+      </div>
+
+      <!-- Empty State for Search -->
+      <div class="empty-state" id="projectsEmptyState" style="display: none;">
+        <i class="fa-solid fa-magnifying-glass-chart empty-icon"></i>
+        <h3>Tidak ada proyek yang cocok</h3>
+        <p>Coba gunakan kata kunci pencarian lain atau pilih kategori "Semua".</p>
+        <button class="btn btn-sm btn-outline" id="resetSearchBtn">Reset Pencarian</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Timeline / Experience Section -->
+  <section class="section experience-section" id="experience">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">JEJAK LANGKAH</span>
+        <h2 class="section-title">Riwayat Pengalaman &amp; Edukasi</h2>
+        <p class="section-subtitle">Perjalanan karir dan pendidikan yang membentuk keahlian saya hingga saat ini.</p>
+      </div>
+
+      <div class="timeline" id="timelineContainer">
+        <!-- Rendered Dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Carousel Section -->
+  <section class="section testimonials-section" id="testimonials">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">APA KATA MEREKA</span>
+        <h2 class="section-title">Testimoni &amp; Ulasan Klien</h2>
+        <p class="section-subtitle">Kepercayaan dan kepuasan mitra kolaborasi terhadap hasil kerja saya.</p>
+      </div>
+
+      <div class="testimonial-slider-wrapper">
+        <div class="testimonial-track" id="testimonialTrack">
+          <!-- Rendered Dynamically -->
+        </div>
+
+        <div class="slider-controls">
+          <button class="slider-btn" id="prevTestimonialBtn" aria-label="Sebelumnya">
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <div class="slider-dots" id="testimonialDots">
+            <!-- Dynamic Dots -->
+          </div>
+          <button class="slider-btn" id="nextTestimonialBtn" aria-label="Selanjutnya">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="section contact-section" id="contact">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">HUBUNGI SAYA</span>
+        <h2 class="section-title">Mari Wujudkan Proyek Anda</h2>
+        <p class="section-subtitle">Punya proyek menarik atau tawaran kerja? Kirim pesan dan mari kita wujudkan bersama.</p>
+      </div>
+
+      <div class="contact-wrapper">
+        <!-- Dynamic Contact Info Cards -->
+        <div class="contact-info-col" id="contactInfoContainer">
+          <!-- Rendered Dynamically -->
+        </div>
+
+        <!-- Contact Form -->
+        <div class="contact-form-col">
+          <form class="contact-form" id="contactForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="name">Nama Lengkap <span class="required">*</span></label>
+                <input type="text" id="name" name="name" placeholder="Misal: Budi Santoso" required />
+              </div>
+              <div class="form-group">
+                <label for="email">Alamat Email <span class="required">*</span></label>
+                <input type="email" id="email" name="email" placeholder="nama@domain.com" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="subject">Subjek Pesan <span class="required">*</span></label>
+              <input type="text" id="subject" name="subject" placeholder="Tawaran Proyek Website / Konsultasi" required />
+            </div>
+
+            <div class="form-group">
+              <label for="message">Pesan Anda <span class="required">*</span></label>
+              <textarea id="message" name="message" rows="5" placeholder="Ceritakan ide, kebutuhan fitur, atau pertanyaan Anda..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Kirim Pesan Sekarang</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 1: PROJECT DETAIL POPUP                                  -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="projectModal">
+    <div class="modal-box modal-lg">
+      <button class="modal-close" id="closeProjectModalBtn" aria-label="Tutup Modal">&times;</button>
+      
+      <div class="modal-body" id="projectModalBody">
+        <!-- Injected dynamically from script.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- MODAL 2: INBOX / KOTAK MASUK VIEWER                            -->
+  <!-- ============================================================= -->
+  <div class="modal-overlay" id="inboxModal">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <i class="fa-regular fa-envelope text-primary"></i>
+          <h3>Kotak Masuk Pesan Lokal</h3>
+        </div>
+        <button class="modal-close" id="closeInboxModalBtn" aria-label="Tutup">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-hint">Semua pesan dari form kontak tersimpan dinamis di LocalStorage browser ini.</p>
+        <div class="inbox-list" id="inboxListContainer">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-sm btn-outline text-danger" id="clearInboxBtn">
+          <i class="fa-solid fa-trash-can"></i> Hapus Semua Pesan
+        </button>
+        <button class="btn btn-sm btn-primary" id="dismissInboxModalBtn">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- DRAWER: THEME & COLOR CUSTOMIZER                              -->
+  <!-- ============================================================= -->
+  <div class="customizer-drawer" id="customizerDrawer">
+    <div class="customizer-header">
+      <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Pengatur Tampilan</h4>
+      <button class="drawer-close" id="closeCustomizerBtn">&times;</button>
+    </div>
+
+    <div class="customizer-content">
+      <div class="customizer-section">
+        <h5>Mode Tampilan</h5>
+        <div class="mode-toggle-group">
+          <button class="mode-btn" data-theme-choice="dark" id="themeChoiceDark">
+            <i class="fa-solid fa-moon"></i> Gelap
+          </button>
+          <button class="mode-btn" data-theme-choice="light" id="themeChoiceLight">
+            <i class="fa-solid fa-sun"></i> Terang
+          </button>
+        </div>
+      </div>
+
+      <div class="customizer-section">
+        <h5>Warna Aksen Utama</h5>
+        <p class="customizer-hint">Pilih warna favorit Anda untuk mengubah tema seluruh website secara instan:</p>
+        <div class="palette-swatches" id="paletteSwatchesContainer">
+          <!-- Rendered Dynamically from data.colorPalettes -->
+        </div>
+      </div>
+
+      <div class="customizer-section">
+        <button class="btn btn-sm btn-outline btn-block" id="resetCustomizerBtn">
+          <i class="fa-solid fa-rotate-left"></i> Reset ke Standar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification -->
+  <div class="toast" id="toast">
+    <i class="fa-solid fa-circle-check toast-icon"></i>
+    <div class="toast-content">
+      <h5 class="toast-title">Pesan Terkirim!</h5>
+      <p class="toast-msg">Terima kasih atas pesan Anda.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-container">
+      <div class="footer-brand">
+        <a href="#home" class="footer-logo">
+          <span class="logo-symbol">&lt;/&gt;</span>
+          <span id="footerBrandName">Ari<span>Dev</span></span>
+        </a>
+        <p id="footerBrandDesc">Membantu mewujudkan pengalaman digital interaktif dan dinamis yang memukau dan berdaya guna.</p>
+      </div>
+
+      <div class="footer-links">
+        <h4>Navigasi Cepat</h4>
+        <ul>
+          <li><a href="#home">Beranda</a></li>
+          <li><a href="#about">Tentang</a></li>
+          <li><a href="#services">Layanan</a></li>
+          <li><a href="#skills">Keahlian</a></li>
+          <li><a href="#projects">Proyek</a></li>
+          <li><a href="#contact">Kontak</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-socials">
+        <h4>Sosial Media</h4>
+        <div class="social-links" id="footerSocialsContainer">
+          <!-- Dynamic Socials -->
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container footer-bottom-container">
+        <p>&copy; <span id="currentYear"></span> <span id="footerCopyrightName">Ari Satriya</span>. Dibuat dinamis dengan Vanilla HTML, CSS &amp; JavaScript.</p>
+        <a href="#home" class="back-to-top" id="backToTop" aria-label="Kembali ke atas">
+          <i class="fa-solid fa-arrow-up"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts: 1. Data File, 2. Interactive Engine -->
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Sunset Drift Masters - 3D Car Racing Game</title>
+
+  <!-- Google Fonts: Motorsport & Arcade Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Three.js 3D Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Racing Stylesheet -->
+  <link rel="stylesheet" href="racing.css" />
+</head>
+<body>
+
+  <!-- Game Shell Container -->
+  <div id="gameContainer">
+    <!-- 3D Canvas -->
+    <canvas id="racingCanvas"></canvas>
+
+    <!-- Speed Wind Streaks (Active during Nitro/High Speed) -->
+    <div id="speedLinesOverlay"></div>
+
+    <!-- ========================================================= -->
+    <!-- IN-RACE HUD                                               -->
+    <!-- ========================================================= -->
+    <div id="raceHud" style="display: none;">
+      <!-- Top Left: Race Status (Rank, Lap, Times) -->
+      <div class="hud-top-left">
+        <div class="rank-badge-box">
+          <span class="rank-label">POSISI</span>
+          <div class="rank-number" id="hudRank">1<span class="rank-suffix">ST</span></div>
+          <span class="total-racers">/ 6 PEMBALAP</span>
+        </div>
+
+        <div class="lap-box">
+          <div class="lap-title"><i class="fa-solid fa-flag-checkered"></i> LAP <span id="hudLap">1</span> / 3</div>
+          <div class="time-display">
+            <span>Waktu: <strong id="hudCurrentTime">00:00.00</strong></span>
+            <span>Terbaik: <strong id="hudBestTime">--:--.--</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Center: Race Event Banner (Notifications) -->
+      <div class="hud-top-center">
+        <div class="event-banner" id="eventBanner">SELAMAT BERTANDING!</div>
+      </div>
+
+      <!-- Top Right: Minimap Radar & Audio Toggle -->
+      <div class="hud-top-right">
+        <div class="minimap-wrapper">
+          <canvas id="minimapCanvas" width="160" height="160"></canvas>
+          <div class="minimap-label">RADAR TRACK</div>
+        </div>
+        <button class="hud-icon-btn" id="audioToggleBtn" title="Suara On/Off">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+
+      <!-- Bottom Center: Active Power-up Item Slot -->
+      <div class="hud-bottom-center">
+        <div class="item-slot-card" id="itemSlotCard">
+          <div class="item-slot-inner" id="itemSlotInner">
+            <i class="fa-solid fa-cube text-muted"></i>
+          </div>
+          <div class="item-slot-label" id="itemSlotLabel">[SPACE/F] KOSONG</div>
+        </div>
+      </div>
+
+      <!-- Bottom Right: Speedometer & Nitro Gauge -->
+      <div class="hud-bottom-right">
+        <div class="speedometer-box">
+          <div class="speed-number" id="hudSpeed">0</div>
+          <div class="speed-unit">KM/H</div>
+
+          <!-- Nitro Bar -->
+          <div class="nitro-bar-wrapper">
+            <div class="nitro-header">
+              <span><i class="fa-solid fa-bolt text-yellow"></i> NITRO</span>
+              <span id="nitroPercent">100%</span>
+            </div>
+            <div class="nitro-bar-track">
+              <div class="nitro-bar-fill" id="nitroBarFill" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile / Touch Controls Overlay -->
+      <div class="touch-race-controls" id="touchRaceControls">
+        <div class="touch-steer-group">
+          <button class="touch-racing-btn" id="btnSteerLeft"><i class="fa-solid fa-arrow-left"></i></button>
+          <button class="touch-racing-btn" id="btnSteerRight"><i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+        <div class="touch-pedal-group">
+          <button class="touch-racing-btn btn-brake" id="btnBrake"><i class="fa-solid fa-backward"></i></button>
+          <button class="touch-racing-btn btn-gas" id="btnGas"><i class="fa-solid fa-forward"></i></button>
+          <button class="touch-racing-btn btn-nitro" id="btnTouchItem"><i class="fa-solid fa-rocket"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- COUNTDOWN OVERLAY ("3", "2", "1", "GO!")                 -->
+    <!-- ========================================================= -->
+    <div id="countdownOverlay" style="display: none;">
+      <div id="countdownText">3</div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- START / GARAGE SELECTION SCREEN                           -->
+    <!-- ========================================================= -->
+    <div id="startScreen">
+      <div class="start-modal">
+        <div class="game-logo-banner">
+          <div class="sunset-tag"><i class="fa-solid fa-sun"></i> SENJA KEEMASAN (GOLDEN SUNSET)</div>
+          <h1 class="game-logo">SUNSET DRIFT MASTERS</h1>
+          <p class="game-tagline">3D Arcade Circuit Racing with NPC Rivals &amp; Power-ups</p>
+        </div>
+
+        <div class="garage-showcase">
+          <div class="car-badge-header">
+            <span class="car-class"><i class="fa-solid fa-crown text-gold"></i> MOBIL ANDALAN ANDA</span>
+            <h2>DRIFT MASTER RX-8</h2>
+          </div>
+
+          <div class="car-specs-grid">
+            <div class="spec-item">
+              <span class="spec-label">Top Speed:</span>
+              <div class="spec-bar-track"><div class="spec-bar-fill" style="width: 88%;"></div></div>
+              <span class="spec-val">220 KM/H</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Akselerasi:</span>
+              <div class="spec-bar-track"><div class="spec-bar-fill" style="width: 85%;"></div></div>
+              <span class="spec-val">0-100: 3.2s</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Handling &amp; Drift:</span>
+              <div class="spec-bar-track"><div class="spec-bar-fill" style="width: 98%;"></div></div>
+              <span class="spec-val">S-TIER (98%)</span>
+            </div>
+            <div class="spec-item">
+              <span class="spec-label">Kapasitas Nitro:</span>
+              <div class="spec-bar-track"><div class="spec-bar-fill" style="width: 90%;"></div></div>
+              <span class="spec-val">3x Boost</span>
+            </div>
+          </div>
+
+          <div class="features-pill-row">
+            <span class="pill"><i class="fa-solid fa-users"></i> 5 Lawan AI Pintar</span>
+            <span class="pill"><i class="fa-solid fa-box-open"></i> Kotak Power-up di Jalan</span>
+            <span class="pill"><i class="fa-solid fa-road"></i> 3 Lap Sirkuit Berkelok</span>
+            <span class="pill"><i class="fa-solid fa-cloud-sun"></i> Suasana Senja Sunset</span>
+          </div>
+
+          <div class="controls-guide-box">
+            <h4><i class="fa-solid fa-keyboard"></i> KONTROL KEMUDI:</h4>
+            <div class="keys-grid">
+              <div><kbd>W</kbd> / <kbd>&uarr;</kbd> : Gas Maju</div>
+              <div><kbd>S</kbd> / <kbd>&darr;</kbd> : Rem / Mundur</div>
+              <div><kbd>A</kbd> <kbd>D</kbd> / <kbd>&larr;</kbd> <kbd>&rarr;</kbd> : Belok Kiri / Kanan</div>
+              <div><kbd>SHIFT</kbd> / <kbd>SPACE</kbd> : Drift di Tikungan</div>
+              <div><kbd>F</kbd> / <kbd>E</kbd> : Gunakan Item Power-up</div>
+              <div><kbd>C</kbd> : Ganti Sudut Pandang Kamera</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-start-race" id="startRaceBtn">
+          <span>GAS! MULAI BALAPAN</span>
+          <i class="fa-solid fa-flag-checkered"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- PODIUM & RACE FINISH RESULTS MODAL                        -->
+    <!-- ========================================================= -->
+    <div id="finishOverlay" style="display: none;">
+      <div class="finish-card">
+        <div class="finish-header">
+          <i class="fa-solid fa-trophy trophy-icon" id="podiumTrophy"></i>
+          <h2 id="finishTitle">FINISH!</h2>
+          <p id="finishSubtitle">Hasil Perlombaan Sunset Grand Prix</p>
+        </div>
+
+        <div class="leaderboard-table" id="leaderboardTable">
+          <!-- Dynamically populated rows -->
+        </div>
+
+        <div class="finish-actions">
+          <button class="btn-start-race" id="playAgainBtn">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>BALAPAN LAGI</span>
+          </button>
+          <a href="index.html" class="btn-back-portfolio">
+            <i class="fa-solid fa-house"></i>
+            <span>Kembali ke Portofolio</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="racing.js"></script>
+</body>
+</html>

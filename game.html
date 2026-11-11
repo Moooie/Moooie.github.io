@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Stickman: Shadow Reckoning - Game Aksi Petualangan</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Game Stylesheet -->
+  <link rel="stylesheet" href="game.css" />
+</head>
+<body>
+
+  <!-- Game Shell Wrapper -->
+  <div class="game-wrapper" id="gameWrapper">
+    
+    <!-- Top Game HUD (Heads-Up Display) -->
+    <header class="game-hud" id="gameHud">
+      <!-- Player Status (HP, Stamina, EXP, Level) -->
+      <div class="hud-player-stats">
+        <div class="player-avatar-hud">
+          <div class="avatar-circle">
+            <i class="fa-solid fa-person-running"></i>
+          </div>
+          <div class="player-level-badge" id="hudPlayerLevel">Lv. 1</div>
+        </div>
+
+        <div class="bars-container">
+          <!-- HP Bar -->
+          <div class="hud-bar-wrapper">
+            <div class="bar-header">
+              <span class="bar-label"><i class="fa-solid fa-heart text-red"></i> HP</span>
+              <span class="bar-value" id="hudHpText">100 / 100</span>
+            </div>
+            <div class="bar-track hp-track">
+              <div class="bar-fill hp-fill" id="hudHpFill" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <!-- Stamina Bar -->
+          <div class="hud-bar-wrapper">
+            <div class="bar-header">
+              <span class="bar-label"><i class="fa-solid fa-bolt text-yellow"></i> STAMINA</span>
+              <span class="bar-value" id="hudStaminaText">100 / 100</span>
+            </div>
+            <div class="bar-track stamina-track">
+              <div class="bar-fill stamina-fill" id="hudStaminaFill" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center HUD: Level / Stage Name & Objectives -->
+      <div class="hud-stage-info">
+        <div class="stage-tag" id="hudStageTag">CHAPTER 1</div>
+        <div class="stage-title" id="hudStageTitle">Desa yang Ditinggalkan</div>
+        <div class="stage-objective" id="hudStageObjective">
+          <i class="fa-solid fa-crosshairs"></i> Basmi semua musuh dan capai Gerbang Benteng
+        </div>
+      </div>
+
+      <!-- Right HUD: Currency, Weapon, Menu Buttons -->
+      <div class="hud-actions-group">
+        <!-- Gold / Coins -->
+        <div class="resource-badge" title="Koin Emas">
+          <i class="fa-solid fa-coins text-gold"></i>
+          <span id="hudCoins">0</span>
+        </div>
+
+        <!-- Stat Upgrade Points -->
+        <button class="upgrade-btn-hud" id="openUpgradeModalBtn" title="Tingkatkan Atribut Karakter">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Atribut</span>
+          <span class="upgrade-points-badge" id="hudStatPointsBadge">0</span>
+        </button>
+
+        <!-- Current Weapon Indicator -->
+        <div class="weapon-hud" id="hudWeaponSlot" title="Tekan Q untuk ganti senjata">
+          <div class="weapon-icon" id="hudWeaponIcon">
+            <i class="fa-solid fa-khanda"></i>
+          </div>
+          <div class="weapon-info">
+            <span class="weapon-key">[Q] Senjata:</span>
+            <strong id="hudWeaponName">Pedang Bayangan</strong>
+          </div>
+        </div>
+
+        <!-- Audio Toggle & Pause -->
+        <button class="hud-circle-btn" id="audioToggleBtn" title="Suara On/Off">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button class="hud-circle-btn" id="pauseBtn" title="Jeda Permainan">
+          <i class="fa-solid fa-pause"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main HTML5 Canvas Container -->
+    <div class="canvas-container" id="canvasContainer">
+      <canvas id="gameCanvas"></canvas>
+
+      <!-- Floating Controls Guide overlay (Auto fades out) -->
+      <div class="controls-hint-overlay" id="controlsHint">
+        <div class="hint-item"><kbd>A</kbd> <kbd>D</kbd> Gerak</div>
+        <div class="hint-item"><kbd>W</kbd> Lompat / Panjat</div>
+        <div class="hint-item"><kbd>Shift</kbd> / <kbd>Space</kbd> Dash/Dodge</div>
+        <div class="hint-item"><kbd>Klik Kiri</kbd> / <kbd>J</kbd> Serang</div>
+        <div class="hint-item"><kbd>Q</kbd> Ganti Pedang/Panah</div>
+        <div class="hint-item"><kbd>C</kbd> Menu Atribut</div>
+      </div>
+
+      <!-- Boss Health Bar (Hidden by default, shown during boss battles) -->
+      <div class="boss-health-container" id="bossHud" style="display: none;">
+        <div class="boss-name" id="bossName">Jenderal Bayangan Kurawa</div>
+        <div class="boss-bar-track">
+          <div class="boss-bar-fill" id="bossHpFill" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- On-Screen Touch / Mobile Controls (Visible on touch devices or toggled) -->
+    <div class="touch-controls-bar" id="touchControls">
+      <div class="touch-dpad">
+        <button class="touch-btn" id="btnLeft"><i class="fa-solid fa-arrow-left"></i></button>
+        <button class="touch-btn" id="btnRight"><i class="fa-solid fa-arrow-right"></i></button>
+        <button class="touch-btn" id="btnJump"><i class="fa-solid fa-arrow-up"></i></button>
+      </div>
+      <div class="touch-actions">
+        <button class="touch-btn btn-dash" id="btnDash">DASH</button>
+        <button class="touch-btn btn-switch" id="btnSwitch">SWITCH</button>
+        <button class="touch-btn btn-attack" id="btnAttack">ATK</button>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- OVERLAY 1: STORY DIALOGUE & NARRATIVE CHOICE MODAL             -->
+    <!-- ============================================================= -->
+    <div class="dialogue-overlay" id="dialogueOverlay" style="display: none;">
+      <div class="dialogue-box">
+        <div class="dialogue-speaker">
+          <div class="speaker-avatar" id="dialogueAvatar">
+            <i class="fa-solid fa-user-ninja"></i>
+          </div>
+          <div class="speaker-meta">
+            <h3 class="speaker-name" id="dialogueSpeakerName">Ksatria Stickman</h3>
+            <span class="speaker-role" id="dialogueSpeakerRole">Pemberontak Kerajaan</span>
+          </div>
+        </div>
+
+        <div class="dialogue-body">
+          <p class="dialogue-text" id="dialogueText">
+            "Kekaisaran Hitam telah membakar desa kita. Benteng di depan dijaga ketat oleh pasukan bayangan. Keputusan apa yang harus kita ambil?"
+          </p>
+        </div>
+
+        <!-- Narrative Choice Buttons -->
+        <div class="dialogue-choices" id="dialogueChoicesContainer">
+          <!-- Dynamically generated choices -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- OVERLAY 2: CHARACTER ATTRIBUTES & UPGRADE MODAL                -->
+    <!-- ============================================================= -->
+    <div class="game-modal-overlay" id="upgradeModal" style="display: none;">
+      <div class="game-modal-card">
+        <div class="modal-card-header">
+          <div class="header-title">
+            <i class="fa-solid fa-shield-halved text-gold"></i>
+            <h2>Tingkatkan Atribut Karakter</h2>
+          </div>
+          <button class="modal-close-btn" id="closeUpgradeModalBtn">&times;</button>
+        </div>
+
+        <div class="modal-card-body">
+          <div class="attribute-summary-banner">
+            <div>
+              <span>Poin Atribut Tersedia:</span>
+              <strong class="stat-highlight" id="modalStatPoints">0 Poin</strong>
+            </div>
+            <div>
+              <span>Koin Emas:</span>
+              <strong class="gold-highlight" id="modalGold">0 Gold</strong>
+            </div>
+          </div>
+
+          <div class="attributes-grid" id="attributesGrid">
+            <!-- Attribute 1: Max HP -->
+            <div class="stat-upgrade-card">
+              <div class="stat-icon-box text-red"><i class="fa-solid fa-heart"></i></div>
+              <div class="stat-details">
+                <h4>Vitalitas (Max HP)</h4>
+                <p>Meningkatkan total darah maksimum stickman.</p>
+                <div class="stat-level-display">
+                  <span>Level saat ini: <strong id="statHpLevel">1</strong></span>
+                  <span class="stat-val" id="statHpVal">(+120 HP)</span>
+                </div>
+              </div>
+              <button class="btn-upgrade" data-stat="vitality">
+                <i class="fa-solid fa-plus"></i> Naikkan
+              </button>
+            </div>
+
+            <!-- Attribute 2: Max Stamina & Regen -->
+            <div class="stat-upgrade-card">
+              <div class="stat-icon-box text-yellow"><i class="fa-solid fa-bolt"></i></div>
+              <div class="stat-details">
+                <h4>Ketahanan (Stamina)</h4>
+                <p>Mempercepat pemulihan stamina & menambah kapasitas dash.</p>
+                <div class="stat-level-display">
+                  <span>Level saat ini: <strong id="statStaminaLevel">1</strong></span>
+                  <span class="stat-val" id="statStaminaVal">(+100 STA)</span>
+                </div>
+              </div>
+              <button class="btn-upgrade" data-stat="endurance">
+                <i class="fa-solid fa-plus"></i> Naikkan
+              </button>
+            </div>
+
+            <!-- Attribute 3: Pedang (Sword Attack) -->
+            <div class="stat-upgrade-card">
+              <div class="stat-icon-box text-indigo"><i class="fa-solid fa-khanda"></i></div>
+              <div class="stat-details">
+                <h4>Kekuatan Pedang (Melee)</h4>
+                <p>Meningkatkan damage tebasan pedang dan daya hancur.</p>
+                <div class="stat-level-display">
+                  <span>Level saat ini: <strong id="statSwordLevel">1</strong></span>
+                  <span class="stat-val" id="statSwordVal">(25 DMG)</span>
+                </div>
+              </div>
+              <button class="btn-upgrade" data-stat="sword">
+                <i class="fa-solid fa-plus"></i> Naikkan
+              </button>
+            </div>
+
+            <!-- Attribute 4: Panah (Bow & Arrow) -->
+            <div class="stat-upgrade-card">
+              <div class="stat-icon-box text-cyan"><i class="fa-solid fa-bullseye"></i></div>
+              <div class="stat-details">
+                <h4>Ketangkasan Panah (Ranged)</h4>
+                <p>Meningkatkan damage panah, kecepatan lesatan, & jangkauan.</p>
+                <div class="stat-level-display">
+                  <span>Level saat ini: <strong id="statBowLevel">1</strong></span>
+                  <span class="stat-val" id="statBowVal">(35 DMG)</span>
+                </div>
+              </div>
+              <button class="btn-upgrade" data-stat="bow">
+                <i class="fa-solid fa-plus"></i> Naikkan
+              </button>
+            </div>
+
+            <!-- Attribute 5: Agility (Kecepatan & Dash) -->
+            <div class="stat-upgrade-card">
+              <div class="stat-icon-box text-green"><i class="fa-solid fa-wind"></i></div>
+              <div class="stat-details">
+                <h4>Kelincahan (Kecepatan & Dash)</h4>
+                <p>Membuat lari lebih cepat dan memperjauh jarak dodge roll.</p>
+                <div class="stat-level-display">
+                  <span>Level saat ini: <strong id="statAgilityLevel">1</strong></span>
+                  <span class="stat-val" id="statAgilityVal">(Speed 5.0)</span>
+                </div>
+              </div>
+              <button class="btn-upgrade" data-stat="agility">
+                <i class="fa-solid fa-plus"></i> Naikkan
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-card-footer">
+          <span class="footer-tip"><i class="fa-solid fa-circle-info"></i> Naikkan level dengan mengalahkan musuh untuk mendapat Poin Atribut!</span>
+          <button class="btn-primary-action" id="closeUpgradeModalBtn2">Selesai &amp; Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- OVERLAY 3: LEVEL CLEAR / STAGE COMPLETE MODAL                  -->
+    <!-- ============================================================= -->
+    <div class="game-modal-overlay" id="stageClearModal" style="display: none;">
+      <div class="game-modal-card victory-card">
+        <div class="victory-header">
+          <i class="fa-solid fa-trophy victory-icon"></i>
+          <h2>STAGE SELESAI!</h2>
+          <p class="stage-cleared-name" id="clearedStageName">Chapter 1: Desa yang Ditinggalkan</p>
+        </div>
+
+        <div class="victory-rewards">
+          <div class="reward-box">
+            <span class="reward-label">EXP Diperoleh</span>
+            <span class="reward-val text-cyan" id="rewardExp">+250 EXP</span>
+          </div>
+          <div class="reward-box">
+            <span class="reward-label">Koin Emas</span>
+            <span class="reward-val text-gold" id="rewardGold">+100 Gold</span>
+          </div>
+          <div class="reward-box">
+            <span class="reward-label">Poin Atribut</span>
+            <span class="reward-val text-yellow" id="rewardPoints">+2 Poin</span>
+          </div>
+        </div>
+
+        <div class="victory-actions">
+          <button class="btn-primary-action btn-lg" id="nextStageBtn">
+            <span>Lanjut ke Stage Berikutnya</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- OVERLAY 4: GAME OVER MODAL                                     -->
+    <!-- ============================================================= -->
+    <div class="game-modal-overlay" id="gameOverModal" style="display: none;">
+      <div class="game-modal-card gameover-card">
+        <div class="gameover-header">
+          <i class="fa-solid fa-skull-crossbones gameover-icon"></i>
+          <h2>KSATRIA GUGUR</h2>
+          <p>Jiwa stickman Anda telah dikalahkan oleh kegelapan.</p>
+        </div>
+
+        <div class="gameover-actions">
+          <button class="btn-primary-action btn-danger" id="retryStageBtn">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Coba Ulang Stage</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- OVERLAY 5: PAUSE MENU                                          -->
+    <!-- ============================================================= -->
+    <div class="game-modal-overlay" id="pauseModal" style="display: none;">
+      <div class="game-modal-card pause-card">
+        <h2>PERMAINAN DIJEDA</h2>
+        <div class="pause-menu-list">
+          <button class="pause-menu-btn" id="resumeBtn">
+            <i class="fa-solid fa-play"></i> Lanjutkan Bertarung
+          </button>
+          <button class="pause-menu-btn" id="pauseUpgradeBtn">
+            <i class="fa-solid fa-shield-halved"></i> Tingkatkan Atribut
+          </button>
+          <button class="pause-menu-btn" id="restartStageBtn">
+            <i class="fa-solid fa-rotate-right"></i> Muat Ulang Stage
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Minecraft Web Edition (HTML5, CSS, Three.js)</title>
+  
+  <!-- Minecraft Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Three.js 3D Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="minecraft.css" />
+</head>
+<body>
+
+  <!-- 3D Canvas Viewport -->
+  <div id="gameViewport">
+    <canvas id="mcCanvas"></canvas>
+
+    <!-- Crosshair in center -->
+    <div id="crosshair"></div>
+
+    <!-- Breaking block crack overlay (visual progress) -->
+    <div id="breakProgressContainer" style="display: none;">
+      <div id="breakProgressBar"></div>
+    </div>
+
+    <!-- HUD (Health, Hunger, Hotbar) -->
+    <div id="hudOverlay">
+      <!-- Top Status info -->
+      <div id="debugInfo">
+        <span>FPS: <strong id="fpsCounter">60</strong></span>
+        <span>Posisi: <strong id="posText">X: 0, Y: 12, Z: 0</strong></span>
+        <span>Target: <strong id="targetBlockText">Udara</strong></span>
+        <span>Waktu: <strong id="timeText">Siang Hari</strong></span>
+      </div>
+
+      <!-- Health & Hunger Bars -->
+      <div id="statusBar">
+        <div id="healthBar" class="icon-row" title="Kesehatan Pemain"></div>
+        <div id="foodBar" class="icon-row" title="Kelaparan Pemain"></div>
+      </div>
+
+      <!-- 9-Slot Hotbar -->
+      <div id="hotbarContainer">
+        <div id="hotbarSlots">
+          <!-- 9 hotbar slots injected via JS -->
+        </div>
+        <div id="hotbarSelector"></div>
+      </div>
+      <div id="heldItemName">Tangan Kosong</div>
+    </div>
+
+    <!-- Pointer Lock Click Screen (Start / Resume) -->
+    <div id="blocker">
+      <div id="instructions">
+        <h1 class="mc-title">MINECRAFT</h1>
+        <p class="mc-subtitle">Versi Web Browser 3D (HTML, CSS &amp; Three.js)</p>
+
+        <div class="instructions-card">
+          <h3><i class="fa-solid fa-gamepad"></i> KONTROL PERMAINAN:</h3>
+          <ul class="controls-list">
+            <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> : Bergerak Maju, Kiri, Mundur, Kanan</li>
+            <li><kbd>SPACE</kbd> : Melompat</li>
+            <li><kbd>SHIFT</kbd> : Menunduk / Mengendap (*Sneak*)</li>
+            <li><kbd>MOUSE</kbd> : Melihat Sekeliling 360 Derajat</li>
+            <li><kbd>KLIK KIRI (Tahan)</kbd> : Menambang / Menebang / Hancurkan Blok</li>
+            <li><kbd>KLIK KANAN</kbd> : Taruh Blok / Pakai Bow / Buka Crafting Table</li>
+            <li><kbd>1</kbd> - <kbd>9</kbd> / <kbd>Scroll</kbd> : Pilih Slot Hotbar</li>
+            <li><kbd>E</kbd> : Buka / Tutup Inventory &amp; Crafting</li>
+            <li><kbd>Q</kbd> : Buang Item</li>
+            <li><kbd>ESC</kbd> : Buka Menu Jeda</li>
+          </ul>
+        </div>
+
+        <button id="playBtn" class="mc-btn mc-btn-large">
+          <i class="fa-solid fa-play"></i> KLIK UNTUK BERMAIN
+        </button>
+
+        <div class="credits-hint">
+          Pohon, batu, bijih tambang, crafting, pedang, busur panah, dan monster zombie aktif di dunia voxel!
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- INVENTORY & CRAFTING GUI OVERLAY (Press 'E')              -->
+    <!-- ========================================================= -->
+    <div id="inventoryOverlay" style="display: none;">
+      <div class="mc-window" id="inventoryWindow">
+        <div class="mc-window-header">
+          <span id="windowTitle">Inventory &amp; Crafting (2x2)</span>
+          <button id="closeInventoryBtn" class="mc-close-btn">&times;</button>
+        </div>
+
+        <div class="inventory-layout">
+          <!-- Left: Recipe Book & Quick Craft -->
+          <div class="recipe-book-panel">
+            <h4><i class="fa-solid fa-book-bookmark text-gold"></i> Resep Cepat</h4>
+            <div class="recipe-list" id="recipeListContainer">
+              <!-- Recipes injected via JS -->
+            </div>
+          </div>
+
+          <!-- Right: Authentic Inventory & Crafting Grid -->
+          <div class="crafting-and-inv-panel">
+            <!-- 2x2 or 3x3 Crafting Section -->
+            <div class="crafting-section">
+              <div class="crafting-label">Crafting</div>
+              <div class="crafting-area">
+                <div class="crafting-grid" id="craftingGrid">
+                  <!-- Slots 2x2 or 3x3 -->
+                </div>
+                <div class="crafting-arrow">&rarr;</div>
+                <div class="craft-result-wrapper">
+                  <div class="inv-slot craft-result-slot" id="craftResultSlot" data-slot="result"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Player Inventory Section (27 slots) -->
+            <div class="player-inv-section">
+              <div class="inv-label">Inventory</div>
+              <div class="inv-grid-27" id="mainInventorySlots">
+                <!-- 27 storage slots -->
+              </div>
+            </div>
+
+            <!-- Player Hotbar Section (9 slots) -->
+            <div class="player-hotbar-section">
+              <div class="inv-label">Hotbar</div>
+              <div class="inv-grid-9" id="invHotbarSlots">
+                <!-- 9 hotbar slots -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Tooltip for items -->
+    <div id="itemTooltip" style="display: none;"></div>
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="minecraft.js"></script>
+</body>
+</html>

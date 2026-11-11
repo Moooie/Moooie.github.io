@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Escape The Backrooms: Liminal Horror Co-op (3D)</title>
+
+  <!-- Google Fonts: Horror, Liminal & Sci-Fi Monospace -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=VT323&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Three.js 3D Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- PeerJS for WebRTC P2P Co-op Multiplayer -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <!-- Backrooms Stylesheet -->
+  <link rel="stylesheet" href="backrooms.css" />
+</head>
+<body>
+
+  <!-- Game Shell Container -->
+  <div id="gameContainer">
+    <!-- 3D Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Post-processing Horror Overlays -->
+    <div id="vignetteOverlay"></div>
+    <div id="vhsScanlines"></div>
+    <div id="sanityGlitchOverlay"></div>
+    <div id="chaseRedFlash"></div>
+
+    <!-- Crosshair in center -->
+    <div id="crosshair"></div>
+
+    <!-- Center Interaction Prompt -->
+    <div id="interactPrompt" style="display: none;">
+      <span class="key-badge">E</span>
+      <span id="interactText">Bersembunyi di Loker</span>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- IN-GAME HUD                                               -->
+    <!-- ========================================================= -->
+    <div id="gameHud" style="display: none;">
+      <!-- Top Left: Sanity, Stamina, Battery, Level/EXP -->
+      <div class="hud-top-left">
+        <!-- Sanity (Kewarasan Mental) -->
+        <div class="hud-bar-card">
+          <div class="bar-header">
+            <span><i class="fa-solid fa-brain text-purple"></i> KEWARASAN</span>
+            <span id="sanityText">100%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill sanity-fill" id="sanityBarFill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Stamina -->
+        <div class="hud-bar-card">
+          <div class="bar-header">
+            <span><i class="fa-solid fa-person-running text-cyan"></i> STAMINA</span>
+            <span id="staminaText">100%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill stamina-fill" id="staminaBarFill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Senter & Baterai -->
+        <div class="hud-bar-card">
+          <div class="bar-header">
+            <span><i class="fa-solid fa-flashlight text-yellow"></i> BATERAI SENTER</span>
+            <span id="batteryText">100%</span>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill battery-fill" id="batteryBarFill" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Level & EXP Badge -->
+        <div class="level-badge-box">
+          <span class="player-lvl" id="hudPlayerLevel">LEVEL 1</span>
+          <div class="exp-track">
+            <div class="exp-fill" id="hudExpFill" style="width: 0%;"></div>
+          </div>
+          <span class="exp-text" id="hudExpText">EXP 0 / 150</span>
+        </div>
+      </div>
+
+      <!-- Top Center: Objectives & Key Items -->
+      <div class="hud-top-center">
+        <div class="objective-card">
+          <div class="objective-header">
+            <i class="fa-solid fa-crosshairs text-yellow"></i>
+            <span id="objectiveTitle">LEVEL 0: THE YELLOW LOBBY</span>
+          </div>
+          <div class="objective-items">
+            <span class="obj-item" id="tapeCountBadge">
+              <i class="fa-solid fa-tape"></i> Kaset: <strong id="tapeCountText">0 / 3</strong>
+            </span>
+            <span class="obj-item" id="keycardBadge">
+              <i class="fa-solid fa-id-card"></i> Keycard: <strong id="keycardText">BELUM ADA</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Right: Co-op Status & Audio Controls -->
+      <div class="hud-top-right">
+        <!-- Co-op Teammate Card -->
+        <div class="teammate-status-card" id="teammateCard">
+          <div class="mate-header">
+            <span class="mate-badge"><i class="fa-solid fa-user-group"></i> TEMAN CO-OP</span>
+            <span class="mate-dist" id="mateDistance">-- m</span>
+          </div>
+          <div class="mate-state" id="mateStateText">MENUNGGU TEMAN...</div>
+        </div>
+
+        <!-- Audio Toggle & Walkie-Talkie Voice Toggle -->
+        <div class="hud-buttons-row">
+          <button class="hud-icon-btn" id="voiceToggleBtn" title="Walkie-Talkie Voice Chat P2P">
+            <i class="fa-solid fa-microphone-slash"></i>
+          </button>
+          <button class="hud-icon-btn" id="audioToggleBtn" title="Suara On/Off">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom Center: Skills & Items Quick Bar -->
+      <div class="hud-bottom-center">
+        <!-- Skills Row -->
+        <div class="skills-row">
+          <!-- Skill 1: Sixth Sense -->
+          <div class="skill-box" id="skillSixthSense">
+            <div class="skill-key">Q</div>
+            <i class="fa-solid fa-eye"></i>
+            <span class="skill-name">Insting</span>
+            <div class="cooldown-overlay" id="cdSixthSense"></div>
+          </div>
+
+          <!-- Skill 2: Ghost Step -->
+          <div class="skill-box" id="skillGhostStep">
+            <div class="skill-key">Z</div>
+            <i class="fa-solid fa-shoe-prints"></i>
+            <span class="skill-name">Langkah Hantu</span>
+            <div class="cooldown-overlay" id="cdGhostStep"></div>
+          </div>
+
+          <!-- Skill 3: Sound Decoy -->
+          <div class="skill-box" id="skillDecoy">
+            <div class="skill-key">X</div>
+            <i class="fa-solid fa-bullhorn"></i>
+            <span class="skill-name">Umpan</span>
+            <div class="cooldown-overlay" id="cdDecoy"></div>
+          </div>
+        </div>
+
+        <!-- Inventory Quick Slots -->
+        <div class="items-row">
+          <div class="item-slot" id="slotBattery" title="Pakai Baterai Senter (Tekan 1)">
+            <span class="slot-num">1</span>
+            <i class="fa-solid fa-car-battery text-yellow"></i>
+            <span class="item-qty" id="qtyBattery">x2</span>
+          </div>
+          <div class="item-slot" id="slotAlmond" title="Minum Air Almond (Pulihkan Sanity) (Tekan 2)">
+            <span class="slot-num">2</span>
+            <i class="fa-solid fa-bottle-water text-cyan"></i>
+            <span class="item-qty" id="qtyAlmond">x1</span>
+          </div>
+          <div class="item-slot" id="slotAdrenaline" title="Suntik Adrenalin (Lari Cepat) (Tekan 3)">
+            <span class="slot-num">3</span>
+            <i class="fa-solid fa-syringe text-purple"></i>
+            <span class="item-qty" id="qtyAdrenaline">x1</span>
+          </div>
+        </div>
+
+        <!-- Controls Hint Banner -->
+        <div class="controls-hint-bar">
+          <span><kbd>E</kbd> Sembunyi / Aksi</span>
+          <span><kbd>F</kbd> Senter</span>
+          <span><kbd>C</kbd> Jongkok</span>
+          <span><kbd>V</kbd> Ping Penanda</span>
+          <span><kbd>TAB</kbd> Menu Atribut &amp; Skill</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- LOCKER HIDING OVERLAY (Inside Locker View)                -->
+    <!-- ========================================================= -->
+    <div id="lockerOverlay" style="display: none;">
+      <!-- Metal Louver Grate Frame -->
+      <div class="locker-grate-bars"></div>
+
+      <!-- Breathing & Heartbeat Indicator -->
+      <div class="locker-breath-widget">
+        <div class="heartbeat-pulse-icon" id="lockerHeartIcon">
+          <i class="fa-solid fa-heart-pulse"></i>
+        </div>
+        <div class="breath-instruction">
+          <kbd>TAHAN SPACE</kbd> MENAHAN NAPAS!
+        </div>
+        <div class="breath-bar-track">
+          <div class="breath-bar-fill" id="breathBarFill" style="width: 100%;"></div>
+        </div>
+        <div class="sniff-warning" id="sniffWarning" style="display: none;">
+          <i class="fa-solid fa-triangle-exclamation"></i> ENTITAS SEDANG MENGENDUS LOKER!
+        </div>
+      </div>
+
+      <button class="btn-exit-locker" id="exitLockerBtn">
+        <kbd>E</kbd> KELUAR DARI LOKER
+      </button>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- REVIVE CHANNELING OVERLAY (Holding [E] on Teammate)       -->
+    <!-- ========================================================= -->
+    <div id="reviveProgressContainer" style="display: none;">
+      <div class="revive-channel-card">
+        <div class="revive-spinner"><i class="fa-solid fa-hand-holding-medical"></i></div>
+        <div class="revive-channel-info">
+          <span class="revive-channel-title">MENYELAMATKAN TEMAN...</span>
+          <div class="revive-channel-bar-track">
+            <div class="revive-channel-bar-fill" id="reviveChannelFill" style="width: 0%;"></div>
+          </div>
+          <span class="revive-channel-hint">TAHAN [E] SAMPAI PENUH</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- DOWNED / REVIVE OVERLAY (When Caught in Co-op)             -->
+    <!-- ========================================================= -->
+    <div id="downedOverlay" style="display: none;">
+      <div class="downed-card">
+        <i class="fa-solid fa-skull-crossbones downed-icon"></i>
+        <h2>ANDA PINGSAN!</h2>
+        <p>Anda diserang oleh entitas! Tunggu teman Anda untuk menyelamatkan (*Revive*).</p>
+        <div class="downed-timer-bar">
+          <div class="downed-timer-fill" id="downedTimerFill" style="width: 100%;"></div>
+        </div>
+        <span class="downed-countdown" id="downedCountdownText">Waktu Tersisa: 45 detik</span>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- START / LOBBY & CO-OP SETUP MODAL                         -->
+    <!-- ========================================================= -->
+    <div id="startScreen">
+      <div class="start-modal">
+        <div class="horror-title-banner">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 0.8rem;">
+            <div class="liminal-tag"><i class="fa-solid fa-door-open"></i> LEVEL 0: THE YELLOW LOBBY</div>
+            <a href="index.html" class="btn-back-portfolio-link" style="color: #cbd5e1; text-decoration: none; font-size: 0.85rem; font-family: var(--font-body); padding: 0.35rem 0.8rem; background: rgba(255,255,255,0.08); border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); transition: all 0.2s ease;">
+              <i class="fa-solid fa-arrow-left"></i> Portofolio
+            </a>
+          </div>
+          <h1 class="horror-title">ESCAPE THE BACKROOMS</h1>
+          <p class="horror-subtitle">3D Psychological Survival Horror &amp; Co-op Multiplayer</p>
+        </div>
+
+        <div class="mode-selection-grid">
+          <!-- Option A: Solo Survival -->
+          <div class="mode-card" id="btnModeSolo">
+            <div class="mode-icon text-yellow"><i class="fa-solid fa-user"></i></div>
+            <h3>MAIN SENDIRI (SOLO)</h3>
+            <p>Jelajahi labirin liminal sendirian. Bersembunyi di loker dan lari dari kejaran The Bacteria.</p>
+            <button class="btn-mode-select">MASUK SENDIRIAN</button>
+          </div>
+
+          <!-- Option B: Host Co-op -->
+          <div class="mode-card" id="btnModeHost">
+            <div class="mode-icon text-cyan"><i class="fa-solid fa-tower-broadcast"></i></div>
+            <h3>HOST CO-OP ROOM</h3>
+            <p>Buat kode ruangan dan bagikan ke teman Anda untuk menjelajahi Backrooms bersama secara online.</p>
+            <button class="btn-mode-select">BUAT ROOM CO-OP</button>
+          </div>
+
+          <!-- Option C: Join Co-op -->
+          <div class="mode-card" id="btnModeJoin">
+            <div class="mode-icon text-purple"><i class="fa-solid fa-satellite-dish"></i></div>
+            <h3>GABUNG ROOM TEMAN</h3>
+            <p>Masukkan Room Code yang diberikan teman Anda untuk langsung masuk ke dunianya.</p>
+            <div class="join-input-group">
+              <input type="text" id="joinRoomCodeInput" placeholder="Contoh: ROOM-778" />
+              <button class="btn-mode-select" id="btnConfirmJoin">GABUNG</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Room Code Display (When Hosting) -->
+        <div class="room-code-display-banner" id="roomCodeDisplayBanner" style="display: none;">
+          <span>KODE RUANGAN ANDA:</span>
+          <strong id="myRoomCodeText">MEMBUAT KODE...</strong>
+          <button class="btn-copy-code" id="btnCopyCode"><i class="fa-solid fa-copy"></i> SALIN KODE</button>
+          <p class="waiting-hint">Bagikan kode ini ke teman Anda. Game akan otomatis mulai saat teman terhubung!</p>
+          <button class="btn-start-anyway" id="btnStartAnyway">Mulai Balapan Bertahan Hidup Sekarang</button>
+        </div>
+
+        <div class="lore-instructions">
+          <h4><i class="fa-solid fa-triangle-exclamation text-yellow"></i> PETUNJUK KELANGSUNGAN HIDUP:</h4>
+          <ul>
+            <li><strong>Loker Besi:</strong> Saat entitas mendekat, segera tekan <kbd>E</kbd> masuk ke loker dan tahan <kbd>SPACE</kbd> untuk menahan napas.</li>
+            <li><strong>Baterai Senter:</strong> Senter Anda akan berkedip saat ada entitas di dekat Anda. Hemat baterai atau cari baterai cadangan.</li>
+            <li><strong>Peningkatan Karakter:</strong> Dapatkan EXP dengan bertahan hidup, lalu tekan <kbd>TAB</kbd> untuk menaikkan kapasitas stamina &amp; kewarasan.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- ATTRIBUTES & SKILLS UPGRADE MODAL (Press 'TAB')            -->
+    <!-- ========================================================= -->
+    <div id="upgradeModal" style="display: none;">
+      <div class="upgrade-card">
+        <div class="upgrade-header">
+          <div class="upgrade-title-box">
+            <i class="fa-solid fa-dna text-purple"></i>
+            <h2>ATRIBUT &amp; SKILL SURVIVOR</h2>
+          </div>
+          <button class="modal-close-btn" id="closeUpgradeModalBtn">&times;</button>
+        </div>
+
+        <div class="upgrade-body">
+          <div class="points-banner">
+            <span>Poin Atribut Tersedia:</span>
+            <strong id="upgradeStatPoints">0 Poin</strong>
+          </div>
+
+          <div class="attributes-list">
+            <!-- Stat 1: Lungs & Stamina -->
+            <div class="attr-row">
+              <div class="attr-icon text-cyan"><i class="fa-solid fa-lungs"></i></div>
+              <div class="attr-info">
+                <h4>Kapasitas Paru-paru (Stamina &amp; Tahan Napas)</h4>
+                <p>Memperpanjang lari sprint dan durasi menahan napas di dalam loker.</p>
+                <div class="attr-stat-val">Level: <strong id="valLungsLevel">1</strong> (+100 Stamina)</div>
+              </div>
+              <button class="btn-attr-upgrade" data-stat="lungs">+ Naikkan</button>
+            </div>
+
+            <!-- Stat 2: Mental Fortitude / Sanity -->
+            <div class="attr-row">
+              <div class="attr-icon text-purple"><i class="fa-solid fa-brain"></i></div>
+              <div class="attr-info">
+                <h4>Kekuatan Mental (Sanity &amp; Ketahanan Takut)</h4>
+                <p>Kewarasan berkurang lebih lambat di kegelapan dan halusinasi berkurang.</p>
+                <div class="attr-stat-val">Level: <strong id="valMentalLevel">1</strong> (+100 Sanity)</div>
+              </div>
+              <button class="btn-attr-upgrade" data-stat="mental">+ Naikkan</button>
+            </div>
+
+            <!-- Stat 3: Stealth Agility -->
+            <div class="attr-row">
+              <div class="attr-icon text-green"><i class="fa-solid fa-shoe-prints"></i></div>
+              <div class="attr-info">
+                <h4>Langkah Hening (Stealth &amp; Kecepatan)</h4>
+                <p>Suara langkah kaki lebih senyap dan kecepatan jalan meningkat.</p>
+                <div class="attr-stat-val">Level: <strong id="valStealthLevel">1</strong> (Radius Suara: Normal)</div>
+              </div>
+              <button class="btn-attr-upgrade" data-stat="stealth">+ Naikkan</button>
+            </div>
+
+            <!-- Stat 4: Perception & Battery -->
+            <div class="attr-row">
+              <div class="attr-icon text-yellow"><i class="fa-solid fa-eye"></i></div>
+              <div class="attr-info">
+                <h4>Persepsi &amp; Efisiensi Baterai</h4>
+                <p>Baterai senter lebih hemat dan jangkauan deteksi entitas lebih jauh.</p>
+                <div class="attr-stat-val">Level: <strong id="valPerceptionLevel">1</strong> (Konsumsi Baterai: Normal)</div>
+              </div>
+              <button class="btn-attr-upgrade" data-stat="perception">+ Naikkan</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="upgrade-footer">
+          <button class="btn-primary-action" id="dismissUpgradeModalBtn">Lanjutkan Bertahan Hidup</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- ESCAPE / VICTORY MODAL                                     -->
+    <!-- ========================================================= -->
+    <div id="escapeModal" style="display: none;">
+      <div class="escape-card">
+        <i class="fa-solid fa-door-open escape-icon"></i>
+        <h2>NO-CLIP BERHASIL!</h2>
+        <p>Anda berhasil meloloskan diri dari Level 0 Backrooms menuju Level berikutnya!</p>
+        <div class="escape-stats">
+          <div>Waktu Bertahan: <strong id="escTime">00:00</strong></div>
+          <div>Kaset Ditemukan: <strong>3 / 3</strong></div>
+          <div>Level Akhir: <strong id="escLevel">Lv. 3</strong></div>
+        </div>
+        <div style="display: flex; gap: 0.8rem; width: 100%;">
+          <button class="btn-primary-action" id="btnRestartGame" style="flex: 1;">Mainkan Ulang</button>
+          <a href="index.html" class="btn-primary-action" style="flex: 1; text-align: center; text-decoration: none; background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25);">Ke Portofolio</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jumpscare Scream Effect -->
+    <div id="jumpscareOverlay" style="display: none;">
+      <div class="jumpscare-face"></div>
+    </div>
+
+  </div>
+
+  <!-- Game Engine Script -->
+  <script src="backrooms.js"></script>
+</body>
+</html>
