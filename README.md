@@ -7,7 +7,7 @@ Game horor psikologis 3D *survival* bertema **"Escape The Backrooms: Level 0 (Th
 
 ---
 
-## 🎮 Fitur Utama Game:
+## 🎮 Fitur Utama Game:.
 
 1. **Suasana Liminal 3D Imersif (Level 0)**:
    - Labirin lantai karpet lembab kecokelatan dan wallpaper kuning bergaris dengan noda rembesan air prosedural.
