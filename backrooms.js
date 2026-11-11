@@ -696,11 +696,27 @@
   // =========================================================================
   // 3. MAIN GAME CLASS (BackroomsGame)
   // =========================================================================
+  // Reusable scratch vectors to eliminate runtime garbage collection stutter
+  const _vMove = new THREE.Vector3();
+  const _vTemp = new THREE.Vector3();
+  const _upAxis = new THREE.Vector3(0, 1, 0);
+
   class BackroomsGame {
     constructor() {
       this.container = document.getElementById('gameContainer');
       this.canvas = document.getElementById('gameCanvas');
       this.audio = new BackroomsAudio();
+
+      // Dynamic Lighting Pool & Spatial Optimization
+      this.ceilingLights = [];
+      this.mazeGrid = null;
+      this.frameCount = 0;
+      this.lastHud = {
+        sanity: -1,
+        stamina: -1,
+        battery: -1,
+        promptText: ''
+      };
 
       // Three.js Core
       this.scene = null;
@@ -917,7 +933,7 @@
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
       this.renderer.shadowMap.enabled = false; // Horror soft baked lighting
 
       // Ambient low liminal glow
@@ -957,6 +973,7 @@
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.25));
     }
 
     // -----------------------------------------------------------------------
@@ -1019,6 +1036,7 @@
           }
         }
       }
+      this.mazeGrid = grid;
 
       // Designate Exit Room at far corner
       grid[this.gridSize - 2][this.gridSize - 2] = 4;
@@ -1087,6 +1105,7 @@
 
       // Spawn Collectible Items (3 Cassette Tapes, 1 Keycard, 5 Batteries, 4 Almond Water, 3 Adrenaline)
       this.spawnCollectibles();
+      this.updateDynamicLights();
     }
 
     createFluorescentFixture(x, y, z) {
@@ -1096,10 +1115,43 @@
       fixture.position.set(x, y, z);
       this.scene.add(fixture);
 
-      // Dim point light casting eerie yellowish glow
+      // Dim point light casting eerie yellowish glow (managed by dynamic light pool)
       const light = new THREE.PointLight(0xfff2b0, 0.85, 11, 1.4);
       light.position.set(x, y - 0.3, z);
+      light.visible = false;
       this.scene.add(light);
+
+      this.ceilingLights.push({
+        x: x,
+        y: y - 0.3,
+        z: z,
+        light: light
+      });
+    }
+
+    updateDynamicLights() {
+      if (!this.ceilingLights || this.ceilingLights.length === 0 || !this.player) return;
+      const px = this.player.position.x;
+      const pz = this.player.position.z;
+      const maxActive = 6;
+
+      const dists = [];
+      for (let i = 0; i < this.ceilingLights.length; i++) {
+        const item = this.ceilingLights[i];
+        const dx = item.x - px;
+        const dz = item.z - pz;
+        dists.push({ item, d2: dx * dx + dz * dz });
+      }
+      dists.sort((a, b) => a.d2 - b.d2);
+
+      for (let i = 0; i < dists.length; i++) {
+        const { item, d2 } = dists[i];
+        if (i < maxActive && d2 < 196) { // Active within 14m (14^2 = 196)
+          item.light.visible = true;
+        } else {
+          item.light.visible = false;
+        }
+      }
     }
 
     createLocker(x, z, lockerTex) {
@@ -2270,14 +2322,15 @@
           }
 
           // Move towards patrol target
-          const patrolDir = this.entity.patrolTarget.clone().sub(entityPos);
-          patrolDir.y = 0;
-          if (patrolDir.length() < 2.0) {
+          _vTemp.subVectors(this.entity.patrolTarget, entityPos);
+          _vTemp.y = 0;
+          const patrolDist = _vTemp.length();
+          if (patrolDist < 2.0) {
             this.pickNewEntityPatrolTarget();
           } else {
-            patrolDir.normalize();
-            entityPos.add(patrolDir.multiplyScalar(this.entity.speed * delta));
-            this.entity.mesh.rotation.y = Math.atan2(patrolDir.x, patrolDir.z);
+            _vTemp.normalize();
+            entityPos.addScaledVector(_vTemp, this.entity.speed * delta);
+            this.entity.mesh.rotation.y = Math.atan2(_vTemp.x, _vTemp.z);
           }
 
           // Check if entity randomly passes near an occupied locker
@@ -2299,12 +2352,13 @@
           }
 
           if (this.entity.soundSource) {
-            const invDir = this.entity.soundSource.clone().sub(entityPos);
-            invDir.y = 0;
-            if (invDir.length() > 1.0) {
-              invDir.normalize();
-              entityPos.add(invDir.multiplyScalar(3.8 * delta));
-              this.entity.mesh.rotation.y = Math.atan2(invDir.x, invDir.z);
+            _vTemp.subVectors(this.entity.soundSource, entityPos);
+            _vTemp.y = 0;
+            const invDist = _vTemp.length();
+            if (invDist > 1.0) {
+              _vTemp.normalize();
+              entityPos.addScaledVector(_vTemp, 3.8 * delta);
+              this.entity.mesh.rotation.y = Math.atan2(_vTemp.x, _vTemp.z);
             }
           }
 
@@ -2327,14 +2381,14 @@
           this.audio.updateHeartbeat(150, true);
 
           // Chase player directly
-          const chaseDir = playerPos.clone().sub(entityPos);
-          chaseDir.y = 0;
-          const chaseDist = chaseDir.length();
+          _vTemp.subVectors(playerPos, entityPos);
+          _vTemp.y = 0;
+          const chaseDist = _vTemp.length();
 
           if (chaseDist > 0.5) {
-            chaseDir.normalize();
-            entityPos.add(chaseDir.multiplyScalar(this.entity.chaseSpeed * delta));
-            this.entity.mesh.rotation.y = Math.atan2(chaseDir.x, chaseDir.z);
+            _vTemp.normalize();
+            entityPos.addScaledVector(_vTemp, this.entity.chaseSpeed * delta);
+            this.entity.mesh.rotation.y = Math.atan2(_vTemp.x, _vTemp.z);
           }
 
           // If player just hid inside a locker during chase
@@ -2392,21 +2446,43 @@
       }
     }
 
-    checkLineOfSight(from, to) {
-      // Raycast against wall boxes
-      const dir = to.clone().sub(from);
-      const len = dir.length();
-      dir.normalize();
+    isPointBlocked(x, z) {
+      if (!this.mazeGrid) return false;
+      const halfMap = (this.gridSize * this.cellSize) / 2;
+      const c = Math.floor((x + halfMap) / this.cellSize);
+      const r = Math.floor((z + halfMap) / this.cellSize);
+      if (r < 0 || r >= this.gridSize || c < 0 || c >= this.gridSize) {
+        return true;
+      }
+      const type = this.mazeGrid[r][c];
+      if (type === 1) return true;
+      if (type === 2) {
+        const cx = (c * this.cellSize) - halfMap + (this.cellSize / 2);
+        const cz = (r * this.cellSize) - halfMap + (this.cellSize / 2);
+        return (Math.abs(x - cx) <= 0.8 && Math.abs(z - cz) <= 0.8);
+      }
+      return false;
+    }
 
-      const step = 0.8;
-      const current = from.clone();
-      for (let d = 0; d < len; d += step) {
-        current.add(dir.clone().multiplyScalar(step));
-        for (let i = 0; i < this.wallBoxes.length; i++) {
-          const b = this.wallBoxes[i];
-          if (current.x >= b.minX && current.x <= b.maxX && current.z >= b.minZ && current.z <= b.maxZ) {
-            return false; // Obstructed by wall
-          }
+    checkLineOfSight(from, to) {
+      const dx = to.x - from.x;
+      const dz = to.z - from.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.2) return true;
+
+      // Step along ray in 0.8m increments with zero vector allocations
+      const steps = Math.ceil(dist / 0.8);
+      const stepX = dx / steps;
+      const stepZ = dz / steps;
+
+      let curX = from.x;
+      let curZ = from.z;
+
+      for (let i = 1; i < steps; i++) {
+        curX += stepX;
+        curZ += stepZ;
+        if (this.isPointBlocked(curX, curZ)) {
+          return false;
         }
       }
       return true;
@@ -2642,21 +2718,21 @@
         this.dom.sanityGlitchOverlay.style.opacity = '0';
       }
 
-      // WASD Input Vector
-      const moveVec = new THREE.Vector3();
-      if (this.keys['KeyW']) moveVec.z -= 1;
-      if (this.keys['KeyS']) moveVec.z += 1;
-      if (this.keys['KeyA']) moveVec.x -= 1;
-      if (this.keys['KeyD']) moveVec.x += 1;
+      // WASD Input Vector (zero-allocation)
+      _vMove.set(0, 0, 0);
+      if (this.keys['KeyW']) _vMove.z -= 1;
+      if (this.keys['KeyS']) _vMove.z += 1;
+      if (this.keys['KeyA']) _vMove.x -= 1;
+      if (this.keys['KeyD']) _vMove.x += 1;
 
-      if (moveVec.length() > 0) {
-        moveVec.normalize();
+      if (_vMove.x !== 0 || _vMove.z !== 0) {
+        _vMove.normalize();
         // Rotate vector according to camera yaw
-        moveVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.player.rotation.yaw);
+        _vMove.applyAxisAngle(_upAxis, this.player.rotation.yaw);
 
         // Move with collision checking
-        const nextX = this.player.position.x + moveVec.x * speed * delta;
-        const nextZ = this.player.position.z + moveVec.z * speed * delta;
+        const nextX = this.player.position.x + _vMove.x * speed * delta;
+        const nextZ = this.player.position.z + _vMove.z * speed * delta;
 
         if (!this.checkWallCollision(nextX, this.player.position.z)) {
           this.player.position.x = nextX;
@@ -2692,11 +2768,31 @@
     }
 
     checkWallCollision(x, z) {
+      if (!this.mazeGrid) return false;
       const radius = 0.45;
-      for (let i = 0; i < this.wallBoxes.length; i++) {
-        const b = this.wallBoxes[i];
-        if (x + radius >= b.minX && x - radius <= b.maxX && z + radius >= b.minZ && z - radius <= b.maxZ) {
-          return true;
+      const halfMap = (this.gridSize * this.cellSize) / 2;
+      const minC = Math.floor((x - radius + halfMap) / this.cellSize);
+      const maxC = Math.floor((x + radius + halfMap) / this.cellSize);
+      const minR = Math.floor((z - radius + halfMap) / this.cellSize);
+      const maxR = Math.floor((z + radius + halfMap) / this.cellSize);
+
+      for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+          if (r < 0 || r >= this.gridSize || c < 0 || c >= this.gridSize) {
+            return true;
+          }
+          const type = this.mazeGrid[r][c];
+          if (type === 1) {
+            return true;
+          }
+          if (type === 2) {
+            const cx = (c * this.cellSize) - halfMap + (this.cellSize / 2);
+            const cz = (r * this.cellSize) - halfMap + (this.cellSize / 2);
+            if (x + radius >= cx - 0.8 && x - radius <= cx + 0.8 &&
+                z + radius >= cz - 0.8 && z - radius <= cz + 0.8) {
+              return true;
+            }
+          }
         }
       }
       return false;
@@ -2706,21 +2802,27 @@
       let promptText = null;
 
       // Check lockers
-      this.lockers.forEach((l) => {
-        if (this.player.position.distanceTo(l.position) < 2.2) {
+      for (let i = 0; i < this.lockers.length; i++) {
+        const l = this.lockers[i];
+        if (Math.hypot(this.player.position.x - l.position.x, this.player.position.z - l.position.z) < 2.2) {
           promptText = 'Bersembunyi di Loker';
+          break;
         }
-      });
+      }
 
       // Check items
-      this.collectibles.forEach((item) => {
-        if (!item.isCollected && this.player.position.distanceTo(item.position) < 2.2) {
-          promptText = `Ambil ${item.name}`;
+      if (!promptText) {
+        for (let i = 0; i < this.collectibles.length; i++) {
+          const item = this.collectibles[i];
+          if (!item.isCollected && Math.hypot(this.player.position.x - item.position.x, this.player.position.z - item.position.z) < 2.2) {
+            promptText = `Ambil ${item.name}`;
+            break;
+          }
         }
-      });
+      }
 
       // Check Exit
-      if (this.exitDoor && this.player.position.distanceTo(this.exitDoor.position) < 2.8) {
+      if (!promptText && this.exitDoor && Math.hypot(this.player.position.x - this.exitDoor.position.x, this.player.position.z - this.exitDoor.position.z) < 2.8) {
         if (this.player.inventory.tapes >= 3 && this.player.inventory.hasKeycard) {
           promptText = 'NO-CLIP KELUAR DARI BACKROOMS!';
         } else {
@@ -2740,27 +2842,47 @@
       }
 
       if (promptText && !this.player.isInsideLocker) {
-        this.dom.interactText.innerText = promptText;
-        this.dom.interactPrompt.style.display = 'flex';
+        if (this.lastHud.promptText !== promptText) {
+          this.lastHud.promptText = promptText;
+          this.dom.interactText.innerText = promptText;
+        }
+        if (this.dom.interactPrompt.style.display !== 'flex') {
+          this.dom.interactPrompt.style.display = 'flex';
+        }
       } else {
-        this.dom.interactPrompt.style.display = 'none';
+        if (this.lastHud.promptText !== '') {
+          this.lastHud.promptText = '';
+        }
+        if (this.dom.interactPrompt.style.display !== 'none') {
+          this.dom.interactPrompt.style.display = 'none';
+        }
       }
     }
 
     updateHudBars() {
-      // Sanity
-      const sanityPct = Math.max(0, (this.player.sanity / this.player.maxSanity) * 100);
-      this.dom.sanityText.innerText = `${Math.round(sanityPct)}%`;
-      this.dom.sanityBarFill.style.width = `${sanityPct}%`;
+      // Sanity (cached DOM write)
+      const sanityPct = Math.round(Math.max(0, (this.player.sanity / this.player.maxSanity) * 100));
+      if (this.lastHud.sanity !== sanityPct) {
+        this.lastHud.sanity = sanityPct;
+        this.dom.sanityText.innerText = `${sanityPct}%`;
+        this.dom.sanityBarFill.style.width = `${sanityPct}%`;
+      }
 
-      // Stamina
-      const staminaPct = Math.max(0, (this.player.stamina / this.player.maxStamina) * 100);
-      this.dom.staminaText.innerText = `${Math.round(staminaPct)}%`;
-      this.dom.staminaBarFill.style.width = `${staminaPct}%`;
+      // Stamina (cached DOM write)
+      const staminaPct = Math.round(Math.max(0, (this.player.stamina / this.player.maxStamina) * 100));
+      if (this.lastHud.stamina !== staminaPct) {
+        this.lastHud.stamina = staminaPct;
+        this.dom.staminaText.innerText = `${staminaPct}%`;
+        this.dom.staminaBarFill.style.width = `${staminaPct}%`;
+      }
 
-      // Battery
-      this.dom.batteryText.innerText = `${Math.round(this.flashlightBattery)}%`;
-      this.dom.batteryBarFill.style.width = `${this.flashlightBattery}%`;
+      // Battery (cached DOM write)
+      const batteryPct = Math.round(this.flashlightBattery);
+      if (this.lastHud.battery !== batteryPct) {
+        this.lastHud.battery = batteryPct;
+        this.dom.batteryText.innerText = `${batteryPct}%`;
+        this.dom.batteryBarFill.style.width = `${batteryPct}%`;
+      }
     }
 
     // -----------------------------------------------------------------------
@@ -2770,9 +2892,15 @@
       requestAnimationFrame(() => this.animate());
 
       const delta = Math.min(this.clock.getDelta(), 0.1);
+      this.frameCount++;
 
       this.updatePlayer(delta);
       this.updateEntity(delta);
+
+      // Dynamically cull & update nearest lights every 8 frames (~7-8 Hz)
+      if (this.frameCount % 8 === 0) {
+        this.updateDynamicLights();
+      }
 
       // Rotate floating collectibles
       this.collectibles.forEach((item) => {
