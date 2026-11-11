@@ -51,7 +51,7 @@ Game horor psikologis 3D *survival* bertema **"Escape The Backrooms: Level 0 (Th
 
 7. **Tujuan Akhir Pelarian**:
    - Temukan **3 Kaset Rekaman** dan **1 Kartu Akses Ruang Kontrol** yang tersebar di labirin.
-   - Buka pintu darurat dimensional untuk melakukan **No-Clip** dan meloloskan diri dari Level 0!
+   - Buka pintu darurat dimensional untuk melakukan **No-Clip** dan meloloskan diri dari Level 0!!
 
 ---
 
