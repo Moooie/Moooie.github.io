@@ -478,6 +478,109 @@
       osc.start(now);
       osc.stop(now + 0.7);
     }
+
+    // ---- Level 1: Habitable Zone Audio ----
+
+    playWaterSplash() {
+      if (!this.ctx || this.isMuted) return;
+      const now = this.ctx.currentTime;
+      const bufSize = Math.floor(this.ctx.sampleRate * 0.18);
+      const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufSize) * 0.5;
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 600;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.35, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+      src.connect(filter);
+      filter.connect(g);
+      g.connect(this.masterGain);
+      src.start(now);
+    }
+
+    playValveCreak() {
+      if (!this.ctx || this.isMuted) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(80, now + 0.6);
+      g.gain.setValueAtTime(0.4, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+      osc.connect(g);
+      g.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.65);
+    }
+
+    playSteamHiss() {
+      if (!this.ctx || this.isMuted) return;
+      const now = this.ctx.currentTime;
+      const bufSize = Math.floor(this.ctx.sampleRate * 1.0);
+      const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1);
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 3800;
+      filter.Q.value = 0.8;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.25, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 1.0);
+      src.connect(filter);
+      filter.connect(g);
+      g.connect(this.masterGain);
+      src.start(now);
+    }
+
+    playSmilerApproach() {
+      if (!this.ctx || this.isMuted) return;
+      const now = this.ctx.currentTime;
+      // Wet raspy breathing
+      for (let b = 0; b < 3; b++) {
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        const filter = this.ctx.createBiquadFilter();
+        osc.type = 'sawtooth';
+        osc.frequency.value = 60 + b * 10;
+        filter.type = 'bandpass';
+        filter.frequency.value = 500;
+        filter.Q.value = 2;
+        const t = now + b * 0.55;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.18, t + 0.2);
+        g.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+        osc.connect(filter);
+        filter.connect(g);
+        g.connect(this.masterGain);
+        osc.start(t);
+        osc.stop(t + 0.55);
+      }
+    }
+
+    playLevelTransitionSting() {
+      if (!this.ctx || this.isMuted) return;
+      const now = this.ctx.currentTime;
+      // Deep drone fade
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(55, now);
+      osc.frequency.exponentialRampToValueAtTime(28, now + 2.0);
+      g.gain.setValueAtTime(0.6, now);
+      g.gain.exponentialRampToValueAtTime(0.01, now + 2.0);
+      osc.connect(g);
+      g.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 2.1);
+    }
   }
 
   // =========================================================================
@@ -654,6 +757,182 @@
       return new THREE.CanvasTexture(canvas);
     }
 
+    // ---- Level 1: Industrial Concrete Textures ----
+
+    static createConcreteWallTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#3a3a3a';
+      ctx.fillRect(0, 0, 512, 512);
+      // Concrete block seams
+      ctx.strokeStyle = 'rgba(20,20,20,0.6)';
+      ctx.lineWidth = 3;
+      for (let y = 0; y <= 512; y += 85) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+      }
+      for (let x = 0, row = 0; x <= 512; x += 128, row++) {
+        const offset = (row % 2 === 0) ? 0 : 64;
+        ctx.beginPath(); ctx.moveTo(x + offset, 0); ctx.lineTo(x + offset, 512); ctx.stroke();
+      }
+      // Moisture streaks (dark vertical runs)
+      for (let i = 0; i < 20; i++) {
+        const sx = Math.random() * 512;
+        const sy = Math.random() * 300;
+        const len = 60 + Math.random() * 160;
+        const grad = ctx.createLinearGradient(sx, sy, sx + 4, sy + len);
+        grad.addColorStop(0, 'rgba(10,20,30,0)');
+        grad.addColorStop(0.3, 'rgba(10,20,30,0.45)');
+        grad.addColorStop(1, 'rgba(10,20,30,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(sx, sy, 6, len);
+      }
+      // Mold patches
+      for (let i = 0; i < 15; i++) {
+        const cx = Math.random() * 512, cy = Math.random() * 512;
+        const r = 15 + Math.random() * 35;
+        const g2 = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+        g2.addColorStop(0, 'rgba(30,55,20,0.4)');
+        g2.addColorStop(1, 'rgba(30,55,20,0)');
+        ctx.fillStyle = g2;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      // Film grain
+      const img = ctx.getImageData(0, 0, 512, 512);
+      const dat = img.data;
+      for (let i = 0; i < dat.length; i += 4) {
+        const n = (Math.random() - 0.5) * 20;
+        dat[i] = Math.min(255, Math.max(0, dat[i] + n));
+        dat[i+1] = Math.min(255, Math.max(0, dat[i+1] + n));
+        dat[i+2] = Math.min(255, Math.max(0, dat[i+2] + n));
+      }
+      ctx.putImageData(img, 0, 0);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    static createWetFloorTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#2a2a2c';
+      ctx.fillRect(0, 0, 512, 512);
+      // Concrete tile grout
+      ctx.strokeStyle = 'rgba(10,10,12,0.7)';
+      ctx.lineWidth = 4;
+      for (let y = 0; y <= 512; y += 128) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(y, 0); ctx.lineTo(y, 512); ctx.stroke();
+      }
+      // Water sheen spots (subtle highlight)
+      for (let i = 0; i < 8; i++) {
+        const cx = Math.random() * 512, cy = Math.random() * 512;
+        const r = 30 + Math.random() * 60;
+        const g2 = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+        g2.addColorStop(0, 'rgba(80,100,120,0.25)');
+        g2.addColorStop(1, 'rgba(80,100,120,0)');
+        ctx.fillStyle = g2;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    static createWaterPuddleTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#1a2030';
+      ctx.fillRect(0, 0, 256, 256);
+      // Water reflection rings
+      for (let i = 0; i < 4; i++) {
+        const cx = 60 + Math.random() * 136, cy = 60 + Math.random() * 136;
+        const r = 20 + Math.random() * 40;
+        const g2 = ctx.createRadialGradient(cx, cy, 2, cx, cy, r);
+        g2.addColorStop(0, 'rgba(120,160,200,0.35)');
+        g2.addColorStop(0.6, 'rgba(60,90,130,0.15)');
+        g2.addColorStop(1, 'rgba(60,90,130,0)');
+        ctx.fillStyle = g2;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    static createIndustrialCeilingTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512; canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#252520';
+      ctx.fillRect(0, 0, 512, 512);
+      // Exposed pipe silhouettes
+      ctx.strokeStyle = 'rgba(60,55,45,0.6)';
+      ctx.lineWidth = 10;
+      for (let x = 60; x < 512; x += 160) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 512); ctx.stroke();
+      }
+      ctx.lineWidth = 6;
+      for (let y = 100; y < 512; y += 200) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+      }
+      // Rust streaks at pipe edges
+      for (let i = 0; i < 12; i++) {
+        const sx = Math.random() * 512, sy = Math.random() * 512;
+        const g2 = ctx.createLinearGradient(sx, sy, sx + 3, sy + 50);
+        g2.addColorStop(0, 'rgba(140,60,20,0.3)');
+        g2.addColorStop(1, 'rgba(140,60,20,0)');
+        ctx.fillStyle = g2;
+        ctx.fillRect(sx, sy, 5, 50);
+      }
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    static createValveTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#4a3020';
+      ctx.fillRect(0, 0, 128, 128);
+      // Wheel spokes
+      ctx.strokeStyle = '#8a5a30';
+      ctx.lineWidth = 10;
+      ctx.beginPath(); ctx.arc(64, 64, 45, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 8;
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+        ctx.beginPath();
+        ctx.moveTo(64, 64);
+        ctx.lineTo(64 + Math.cos(a) * 42, 64 + Math.sin(a) * 42);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#6a3a1a';
+      ctx.beginPath(); ctx.arc(64, 64, 14, 0, Math.PI * 2); ctx.fill();
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    static createChalkMarkTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128; canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, 128, 128);
+      ctx.strokeStyle = 'rgba(220,220,180,0.85)';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      // X mark
+      ctx.beginPath(); ctx.moveTo(20, 20); ctx.lineTo(108, 108); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(108, 20); ctx.lineTo(20, 108); ctx.stroke();
+      // Arrow pointing up
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(64, 50); ctx.lineTo(64, 25); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(50, 38); ctx.lineTo(64, 25); ctx.lineTo(78, 38); ctx.stroke();
+      return new THREE.CanvasTexture(canvas);
+    }
+
     // Emergency Exit Red Door Texture
     static createExitDoorTexture() {
       const canvas = document.createElement('canvas');
@@ -716,6 +995,37 @@
         stamina: -1,
         battery: -1,
         promptText: ''
+      };
+
+      // ---- Level Manager ----
+      this.currentLevel = 0;
+      this.isTransitioning = false;
+      this.levelTitleTimer = 0;
+
+      // ---- Level 1: Water Puddles ----
+      this.waterPuddles = [];
+      this.playerInWater = false;
+
+      // ---- Level 1: Steam Valves ----
+      this.steamValves = [];
+      this.steamBlockerMesh = null;
+      this.bothValvesActivated = false;
+
+      // ---- Level 1: Chalk Markers ----
+      this.chalkMarks = [];
+      this.chalkInventory = 15;
+
+      // ---- Level 1: The Smiler Entity ----
+      this.smiler = {
+        mesh: null,
+        eyeLeft: null,
+        eyeRight: null,
+        eyeLight: null,
+        position: new THREE.Vector3(999, 0, 999),
+        state: 'IDLE',    // IDLE, APPROACH, RETREAT
+        retreatTimer: 0,
+        approachSound: 0,
+        isSpawned: false
       };
 
       // Three.js Core
@@ -903,7 +1213,11 @@
         btnRestartGame: document.getElementById('btnRestartGame'),
         jumpscareOverlay: document.getElementById('jumpscareOverlay'),
         sanityGlitchOverlay: document.getElementById('sanityGlitchOverlay'),
-        chaseRedFlash: document.getElementById('chaseRedFlash')
+        chaseRedFlash: document.getElementById('chaseRedFlash'),
+        // Level 1 HUD elements
+        chalkCountDisplay: document.getElementById('chalkCountDisplay'),
+        valveStatusDisplay: document.getElementById('valveStatusDisplay'),
+        levelTitleCard: document.getElementById('levelTitleCard')
       };
 
       this.initThree();
@@ -1106,6 +1420,608 @@
       // Spawn Collectible Items (3 Cassette Tapes, 1 Keycard, 5 Batteries, 4 Almond Water, 3 Adrenaline)
       this.spawnCollectibles();
       this.updateDynamicLights();
+    }
+
+    // -----------------------------------------------------------------------
+    // LEVEL MANAGER: Transition & Dispose
+    // -----------------------------------------------------------------------
+    disposeCurrentLevel() {
+      // Remove all scene children except persistent ones (camera, pingMarker)
+      const toRemove = [];
+      this.scene.traverse((obj) => {
+        if (obj === this.scene) return;
+        if (obj === this.camera) return;
+        if (obj === this.pingMarkerMesh) return;
+        // Keep the teammate mesh (avoid re-spawning)
+        if (this.teammate && obj === this.teammate.mesh) return;
+        toRemove.push(obj);
+      });
+      toRemove.forEach((obj) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
+        if (obj.parent) obj.parent.remove(obj);
+      });
+
+      // Clear pools
+      this.ceilingLights = [];
+      this.wallBoxes = [];
+      this.lockers = [];
+      this.collectibles = [];
+      this.waterPuddles = [];
+      this.steamValves = [];
+      this.steamBlockerMesh = null;
+      this.bothValvesActivated = false;
+      this.chalkMarks = [];
+      this.exitDoor = null;
+      this.isExitUnlocked = false;
+      this.entity.mesh = null;
+      this.entity.lightMesh = null;
+
+      // Reset smiler
+      this.smiler.mesh = null;
+      this.smiler.eyeLeft = null;
+      this.smiler.eyeRight = null;
+      this.smiler.eyeLight = null;
+      this.smiler.state = 'IDLE';
+      this.smiler.isSpawned = false;
+      this.smiler.position.set(999, 0, 999);
+    }
+
+    transitionToLevel(levelNumber) {
+      if (this.isTransitioning) return;
+      this.isTransitioning = true;
+
+      // VHS glitch flash
+      this.audio.playLevelTransitionSting();
+      const overlay = this.dom.sanityGlitchOverlay;
+      overlay.style.opacity = '1';
+      overlay.style.display = 'block';
+
+      // After 1.8s glitch, switch level
+      setTimeout(() => {
+        this.disposeCurrentLevel();
+        this.currentLevel = levelNumber;
+
+        // Reset player position to safe spawn
+        this.player.position.set(0, 1.7, 0);
+        this.player.rotation.yaw = 0;
+        this.player.rotation.pitch = 0;
+        this.player.inventory.tapes = 0;
+        this.player.inventory.hasKeycard = false;
+
+        if (levelNumber === 1) {
+          // Change scene background & fog for Level 1
+          this.scene.background = new THREE.Color(0x060607);
+          this.scene.fog = new THREE.FogExp2(0x080810, 0.052);
+
+          this.buildMazeLevel1();
+          this.spawnEntityModel();
+          this.spawnSmilerModel();
+
+          // Show Level 1 HUD
+          if (this.dom.chalkCountDisplay) this.dom.chalkCountDisplay.style.display = 'block';
+          if (this.dom.valveStatusDisplay) this.dom.valveStatusDisplay.style.display = 'block';
+          this.updateChalkHUD();
+        }
+
+        // Show level title card
+        this.levelTitleTimer = 4.0;
+        if (this.dom.levelTitleCard) {
+          this.dom.levelTitleCard.innerText = levelNumber === 1
+            ? '⚠ LEVEL 1: HABITABLE ZONE'
+            : `LEVEL ${levelNumber}`;
+          this.dom.levelTitleCard.style.opacity = '1';
+        }
+
+        // Fade out glitch overlay
+        setTimeout(() => {
+          overlay.style.opacity = '0';
+          setTimeout(() => { overlay.style.display = 'none'; }, 600);
+        }, 400);
+
+        this.isTransitioning = false;
+
+        // Co-op sync
+        if (this.peerConn && this.peerConn.open) {
+          this.peerConn.send({ type: 'levelTransition', level: levelNumber });
+        }
+      }, 1800);
+    }
+
+    // -----------------------------------------------------------------------
+    // BUILD MAZE - LEVEL 1: HABITABLE ZONE (Industrial Concrete Warehouse)
+    // -----------------------------------------------------------------------
+    buildMazeLevel1() {
+      const wallTex = TextureFactory.createConcreteWallTexture();
+      const floorTex = TextureFactory.createWetFloorTexture();
+      const ceilTex = TextureFactory.createIndustrialCeilingTexture();
+      const lockerTex = TextureFactory.createLockerTexture();
+      const exitTex = TextureFactory.createExitDoorTexture();
+      const valveTex = TextureFactory.createValveTexture();
+      const puddleTex = TextureFactory.createWaterPuddleTexture();
+
+      const gridSize = 28;
+      const cellSize = 4.0;
+      const mapWidth = gridSize * cellSize;
+      const wallHeight = 4.0;
+
+      // Floor (wet concrete)
+      floorTex.repeat.set(gridSize * 1.2, gridSize * 1.2);
+      const floorGeo = new THREE.PlaneGeometry(mapWidth, mapWidth);
+      const floorMat = new THREE.MeshStandardMaterial({
+        map: floorTex, roughness: 0.5, metalness: 0.3
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      this.scene.add(floor);
+
+      // Ceiling (exposed concrete pipes)
+      ceilTex.repeat.set(gridSize, gridSize);
+      const ceilGeo = new THREE.PlaneGeometry(mapWidth, mapWidth);
+      const ceilMat = new THREE.MeshStandardMaterial({
+        map: ceilTex, roughness: 0.95, metalness: 0.05
+      });
+      const ceil = new THREE.Mesh(ceilGeo, ceilMat);
+      ceil.rotation.x = Math.PI / 2;
+      ceil.position.set(0, wallHeight, 0);
+      this.scene.add(ceil);
+
+      // Grid: 0=open, 1=wall, 2=pillar, 3=locker, 4=exit, 5=water, 6=valve
+      const grid = [];
+      for (let r = 0; r < gridSize; r++) {
+        grid[r] = [];
+        for (let c = 0; c < gridSize; c++) {
+          if (r === 0 || c === 0 || r === gridSize - 1 || c === gridSize - 1) {
+            grid[r][c] = 1;
+          } else {
+            const isPillar = (r % 5 === 0 && c % 5 === 0);
+            const isWall = Math.random() < 0.20;
+            grid[r][c] = isPillar ? 2 : (isWall ? 1 : 0);
+          }
+        }
+      }
+      // Spawn area clear (center)
+      const spawnR = Math.floor(gridSize / 2), spawnC = Math.floor(gridSize / 2);
+      for (let r = spawnR - 2; r <= spawnR + 2; r++) {
+        for (let c = spawnC - 2; c <= spawnC + 2; c++) {
+          if (r > 0 && c > 0 && r < gridSize - 1 && c < gridSize - 1) grid[r][c] = 0;
+        }
+      }
+
+      // Exit at corner
+      grid[gridSize - 2][gridSize - 2] = 4;
+      grid[gridSize - 2][gridSize - 3] = 0;
+      grid[gridSize - 3][gridSize - 2] = 0;
+
+      // Steam blocker just before exit (will be removed when both valves activated)
+      grid[gridSize - 4][gridSize - 2] = 0;
+
+      // Water puddles: tag 15 open cells as type=5
+      let pudCount = 0;
+      for (let r = 3; r < gridSize - 3 && pudCount < 15; r++) {
+        for (let c = 3; c < gridSize - 3 && pudCount < 15; c++) {
+          if (grid[r][c] === 0 && Math.random() < 0.06) {
+            grid[r][c] = 5;
+            pudCount++;
+          }
+        }
+      }
+
+      // Place 2 valves in open cells at different quadrants
+      const valvePositions = [
+        { r: 6, c: 6 }, { r: gridSize - 6, c: 5 }
+      ];
+      valvePositions.forEach(vp => {
+        // Find nearest open cell
+        for (let dr = 0; dr < 4; dr++) {
+          for (let dc = 0; dc < 4; dc++) {
+            const tr = vp.r + dr, tc = vp.c + dc;
+            if (tr > 0 && tc > 0 && tr < gridSize - 1 && tc < gridSize - 1 && grid[tr][tc] === 0) {
+              grid[tr][tc] = 6;
+              break;
+            }
+          }
+        }
+      });
+
+      // Lockers (8 total)
+      let placedLockers = 0;
+      for (let r = 2; r < gridSize - 2 && placedLockers < 8; r++) {
+        for (let c = 2; c < gridSize - 2 && placedLockers < 8; c++) {
+          if (grid[r][c] === 0 && (grid[r-1][c] === 1 || grid[r+1][c] === 1) && Math.random() < 0.3) {
+            grid[r][c] = 3;
+            placedLockers++;
+          }
+        }
+      }
+
+      this.mazeGrid = grid;
+
+      // Build wall material
+      wallTex.repeat.set(1.5, 1.2);
+      const wallMat = new THREE.MeshStandardMaterial({
+        map: wallTex, roughness: 0.9, metalness: 0.05
+      });
+
+      const halfMap = mapWidth / 2;
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const type = grid[r][c];
+          const x = (c * cellSize) - halfMap + (cellSize / 2);
+          const z = (r * cellSize) - halfMap + (cellSize / 2);
+
+          if (type === 1 || type === 2) {
+            const wSize = (type === 2) ? 1.8 : cellSize;
+            const wallGeo = new THREE.BoxGeometry(wSize, wallHeight, wSize);
+            const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+            wallMesh.position.set(x, wallHeight / 2, z);
+            this.scene.add(wallMesh);
+            this.wallBoxes.push({
+              minX: x - wSize / 2, maxX: x + wSize / 2,
+              minZ: z - wSize / 2, maxZ: z + wSize / 2
+            });
+          }
+
+          // Industrial ceiling lights (sparser, flickery)
+          if ((r % 4 === 2 && c % 4 === 2) && type === 0) {
+            this.createIndustrialLight(x, wallHeight - 0.08, z);
+          }
+
+          if (type === 3) this.createLocker(x, z, lockerTex);
+          if (type === 4) this.createExitDoor(x, z, exitTex);
+
+          // Water puddle decal
+          if (type === 5) {
+            const pGeo = new THREE.PlaneGeometry(cellSize * 0.8, cellSize * 0.7);
+            const pMat = new THREE.MeshBasicMaterial({
+              map: puddleTex, transparent: true, opacity: 0.72,
+              depthWrite: false
+            });
+            const puddle = new THREE.Mesh(pGeo, pMat);
+            puddle.rotation.x = -Math.PI / 2;
+            puddle.position.set(x, 0.01, z);
+            this.scene.add(puddle);
+            this.waterPuddles.push({ x, z, radius: cellSize * 0.5 });
+          }
+
+          // Valve
+          if (type === 6) {
+            this.createSteamValve(x, z, valveTex);
+          }
+        }
+      }
+
+      // Steam blocker mesh (crimson translucent wall before exit)
+      const sbX = ((gridSize - 2) * cellSize) - halfMap + (cellSize / 2);
+      const sbZ = ((gridSize - 4) * cellSize) - halfMap + (cellSize / 2);
+      const sbGeo = new THREE.BoxGeometry(cellSize, wallHeight, 0.4);
+      const sbMat = new THREE.MeshBasicMaterial({
+        color: 0xff4400, transparent: true, opacity: 0.45
+      });
+      this.steamBlockerMesh = new THREE.Mesh(sbGeo, sbMat);
+      this.steamBlockerMesh.position.set(sbX, wallHeight / 2, sbZ);
+      this.scene.add(this.steamBlockerMesh);
+      this.wallBoxes.push({
+        minX: sbX - cellSize / 2, maxX: sbX + cellSize / 2,
+        minZ: sbZ - 0.3, maxZ: sbZ + 0.3
+      });
+
+      // Play ambient steam hiss
+      this.audio.playSteamHiss();
+
+      this.spawnCollectibles();
+      this.updateDynamicLights();
+    }
+
+    createIndustrialLight(x, y, z) {
+      // Bare bulb industrial lamp
+      const bulbGeo = new THREE.SphereGeometry(0.15, 8, 8);
+      const bulbMat = new THREE.MeshBasicMaterial({ color: 0xffe8b0 });
+      const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+      bulb.position.set(x, y, z);
+      this.scene.add(bulb);
+
+      const light = new THREE.PointLight(0xffd080, 0.7, 13, 1.6);
+      light.position.set(x, y - 0.2, z);
+      light.visible = false;
+      this.scene.add(light);
+
+      this.ceilingLights.push({ x, y: y - 0.2, z, light });
+    }
+
+    createSteamValve(x, z, valveTex) {
+      const valveGroup = new THREE.Group();
+
+      // Pipe stub on wall
+      const pipeGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.6, 8);
+      const pipeMat = new THREE.MeshStandardMaterial({ color: 0x4a3a2a, roughness: 0.9, metalness: 0.6 });
+      const pipe = new THREE.Mesh(pipeGeo, pipeMat);
+      pipe.rotation.z = Math.PI / 2;
+      pipe.position.set(0, 1.4, 0.3);
+      valveGroup.add(pipe);
+
+      // Valve wheel
+      const wheelGeo = new THREE.TorusGeometry(0.28, 0.06, 6, 12);
+      const wheelMat = new THREE.MeshStandardMaterial({ map: valveTex, roughness: 0.7, metalness: 0.5 });
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+      wheel.position.set(0, 1.4, 0.65);
+      wheel.rotation.y = Math.PI / 2;
+      valveGroup.add(wheel);
+
+      // Spokes
+      for (let i = 0; i < 4; i++) {
+        const spokeGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6);
+        const spoke = new THREE.Mesh(spokeGeo, pipeMat);
+        spoke.rotation.z = (i / 4) * Math.PI * 2;
+        spoke.position.set(0, 1.4, 0.65);
+        spoke.rotation.y = Math.PI / 2;
+        valveGroup.add(spoke);
+      }
+
+      // Steam particle emitter glow
+      const steamLight = new THREE.PointLight(0x88ccff, 0.6, 3.5);
+      steamLight.position.set(0, 1.6, 0.6);
+      valveGroup.add(steamLight);
+
+      valveGroup.position.set(x, 0, z);
+      this.scene.add(valveGroup);
+
+      const valveData = {
+        position: new THREE.Vector3(x, 1.4, z),
+        group: valveGroup,
+        wheel: wheel,
+        steamLight: steamLight,
+        isActivated: false
+      };
+      this.steamValves.push(valveData);
+    }
+
+    checkBothValvesActivated() {
+      const done = this.steamValves.filter(v => v.isActivated).length;
+      if (this.dom.valveStatusDisplay) {
+        this.dom.valveStatusDisplay.innerText = `🔩 Katup ${done}/2`;
+        if (done >= 2) this.dom.valveStatusDisplay.innerText = '🔩 Katup 2/2 ✅';
+      }
+
+      if (done >= 2 && !this.bothValvesActivated) {
+        this.bothValvesActivated = true;
+
+        // Remove steam blocker
+        if (this.steamBlockerMesh) {
+          this.scene.remove(this.steamBlockerMesh);
+          this.steamBlockerMesh.geometry.dispose();
+          this.steamBlockerMesh.material.dispose();
+          // Remove from wallBoxes (last pushed blocker)
+          this.wallBoxes.pop();
+          this.steamBlockerMesh = null;
+        }
+
+        // Alert player
+        this.audio.playPickupChime();
+        if (this.dom.interactPrompt) {
+          this.dom.interactText.innerText = '✅ Jalur uap terbuka! Temukan pintu keluar!';
+          this.dom.interactPrompt.style.display = 'block';
+          setTimeout(() => { this.dom.interactPrompt.style.display = 'none'; }, 3000);
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // THE SMILER: Level 1 Entity
+    // -----------------------------------------------------------------------
+    spawnSmilerModel() {
+      const smilerGroup = new THREE.Group();
+
+      // Two glowing white eyes (small spheres)
+      const eyeGeo = new THREE.SphereGeometry(0.08, 8, 8);
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+      this.smiler.eyeLeft = new THREE.Mesh(eyeGeo, eyeMat);
+      this.smiler.eyeLeft.position.set(-0.18, 1.85, 0);
+      smilerGroup.add(this.smiler.eyeLeft);
+
+      this.smiler.eyeRight = new THREE.Mesh(eyeGeo, eyeMat);
+      this.smiler.eyeRight.position.set(0.18, 1.85, 0);
+      smilerGroup.add(this.smiler.eyeRight);
+
+      // Faint white glow
+      this.smiler.eyeLight = new THREE.PointLight(0xffffff, 1.8, 6);
+      this.smiler.eyeLight.position.set(0, 1.85, 0);
+      smilerGroup.add(this.smiler.eyeLight);
+
+      // Invisible body for future model
+      const bodyGeo = new THREE.BoxGeometry(0.6, 1.9, 0.4);
+      const bodyMat = new THREE.MeshBasicMaterial({ visible: false });
+      this.smiler.mesh = new THREE.Mesh(bodyGeo, bodyMat);
+      this.smiler.mesh.position.set(0, 0.95, 0);
+      smilerGroup.add(this.smiler.mesh);
+
+      // Start far away from player
+      smilerGroup.position.set(45, 0, 45);
+      this.smiler.position.copy(smilerGroup.position);
+      smilerGroup.userData.isSmilerGroup = true;
+
+      this.scene.add(smilerGroup);
+      this.smiler.mesh.parent.userData.group = smilerGroup;
+      // Store group reference
+      this.smiler._group = smilerGroup;
+      this.smiler.isSpawned = true;
+    }
+
+    updateSmiler(delta) {
+      if (!this.smiler.isSpawned || !this.smiler._group) return;
+
+      const pp = this.player.position;
+      const sp = this.smiler.position;
+      const dx = pp.x - sp.x;
+      const dz = pp.z - sp.z;
+      const distToPlayer = Math.sqrt(dx * dx + dz * dz);
+
+      // Face player (horizontal only)
+      if (distToPlayer > 0.5) {
+        this.smiler._group.rotation.y = Math.atan2(dx, dz);
+      }
+
+      switch (this.smiler.state) {
+        case 'IDLE': {
+          // Eyes barely visible in dark
+          if (this.smiler.eyeLight) this.smiler.eyeLight.intensity = 0.5;
+          // Trigger approach if flashlight on & within 25m & LOS clear
+          if (this.isFlashlightOn && distToPlayer < 25) {
+            this.smiler.state = 'APPROACH';
+            this.smiler.approachSound = 1.2; // play breathing soon
+            this.audio.playSmilerApproach();
+          }
+          break;
+        }
+        case 'APPROACH': {
+          if (this.smiler.eyeLight) this.smiler.eyeLight.intensity = 2.5;
+
+          // Move toward player
+          const approachSpd = 2.0;
+          if (distToPlayer > 0.8) {
+            const nx = dx / distToPlayer;
+            const nz = dz / distToPlayer;
+            sp.x += nx * approachSpd * delta;
+            sp.z += nz * approachSpd * delta;
+            // Wall collision for smiler
+            if (this.checkWallCollision(sp.x, sp.z)) {
+              sp.x -= nx * approachSpd * delta;
+              sp.z -= nz * approachSpd * delta;
+            }
+            this.smiler._group.position.set(sp.x, 0, sp.z);
+          }
+
+          // Breathing sound cooldown
+          this.smiler.approachSound -= delta;
+          if (this.smiler.approachSound <= 0) {
+            this.smiler.approachSound = 2.5;
+            this.audio.playSmilerApproach();
+          }
+
+          // Player counter: flashlight OFF + moving slow → retreat
+          const playerSpeed = this.player.velocity.length();
+          if (!this.isFlashlightOn && playerSpeed < 1.5) {
+            this.smiler.state = 'RETREAT';
+            this.smiler.retreatTimer = 8.0;
+          }
+
+          // If flashlight off & running → still retreat but slower timer
+          if (!this.isFlashlightOn && playerSpeed >= 1.5) {
+            this.smiler.state = 'RETREAT';
+            this.smiler.retreatTimer = 4.0;
+          }
+
+          // Attack if too close
+          if (distToPlayer < 1.4) {
+            this.handlePlayerAttacked();
+            this.smiler.state = 'RETREAT';
+            this.smiler.retreatTimer = 10.0;
+          }
+          break;
+        }
+        case 'RETREAT': {
+          if (this.smiler.eyeLight) this.smiler.eyeLight.intensity = 0.8;
+          this.smiler.retreatTimer -= delta;
+
+          // Move away from player at 3.5 m/s
+          const retSpd = 3.5;
+          if (distToPlayer < 35 && distToPlayer > 0.1) {
+            const nx = -dx / distToPlayer;
+            const nz = -dz / distToPlayer;
+            sp.x += nx * retSpd * delta;
+            sp.z += nz * retSpd * delta;
+            if (this.checkWallCollision(sp.x, sp.z)) {
+              sp.x -= nx * retSpd * delta;
+              sp.z -= nz * retSpd * delta;
+            }
+            this.smiler._group.position.set(sp.x, 0, sp.z);
+          }
+
+          if (this.smiler.retreatTimer <= 0 || distToPlayer >= 35) {
+            this.smiler.state = 'IDLE';
+          }
+          break;
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // CHALK MARKER TOOL
+    // -----------------------------------------------------------------------
+    placeChalkMark() {
+      if (this.chalkInventory <= 0) return;
+      if (this.player.isInsideLocker) return;
+
+      // Raycast forward 3m from camera
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x: 0, y: 0 }, this.camera);
+
+      // Collect wall meshes to raycast against
+      const targets = [];
+      this.scene.traverse((obj) => {
+        if (obj.isMesh && obj.geometry && !(obj.geometry instanceof THREE.PlaneGeometry)) {
+          targets.push(obj);
+        }
+      });
+
+      const hits = raycaster.intersectObjects(targets, false);
+      if (hits.length > 0 && hits[0].distance < 3.2) {
+        const hit = hits[0];
+        const chalk = this.createChalkMeshAt(hit.point, hit.face.normal);
+        if (chalk) {
+          this.chalkMarks.push(chalk);
+          this.chalkInventory--;
+          this.updateChalkHUD();
+
+          // Co-op sync
+          if (this.peerConn && this.peerConn.open) {
+            this.peerConn.send({
+              type: 'chalk',
+              x: hit.point.x, y: hit.point.y, z: hit.point.z,
+              nx: hit.face.normal.x, ny: hit.face.normal.y, nz: hit.face.normal.z
+            });
+          }
+        }
+      }
+    }
+
+    createChalkMeshAt(point, normal) {
+      const chalkTex = TextureFactory.createChalkMarkTexture();
+      const geo = new THREE.PlaneGeometry(1.1, 1.1);
+      const mat = new THREE.MeshBasicMaterial({
+        map: chalkTex, transparent: true, opacity: 0.88,
+        depthWrite: false, side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+
+      // Position slightly off wall surface
+      mesh.position.copy(point);
+      mesh.position.addScaledVector(normal, 0.04);
+
+      // Orient to face the wall (align with normal)
+      const up = new THREE.Vector3(0, 1, 0);
+      const quat = new THREE.Quaternion();
+      quat.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+      mesh.quaternion.copy(quat);
+
+      this.scene.add(mesh);
+      return mesh;
+    }
+
+    receiveChalkMark(data) {
+      const point = new THREE.Vector3(data.x, data.y, data.z);
+      const normal = new THREE.Vector3(data.nx, data.ny, data.nz);
+      this.createChalkMeshAt(point, normal);
+    }
+
+    updateChalkHUD() {
+      if (this.dom.chalkCountDisplay) {
+        this.dom.chalkCountDisplay.innerText = `🖍️ ${this.chalkInventory}`;
+      }
     }
 
     createFluorescentFixture(x, y, z) {
@@ -1499,6 +2415,11 @@
           this.placePingMarker();
         }
 
+        // [T] Place Chalk Mark (Level 1)
+        if (e.code === 'KeyT' && this.currentLevel === 1 && this.isPointerLocked) {
+          this.placeChalkMark();
+        }
+
         // [1] Use Battery
         if (e.code === 'Digit1') {
           this.useItem('battery');
@@ -1826,6 +2747,13 @@
         this.syncRemoteCollectedItem(data.index, data.itemType);
       } else if (data.type === 'revived') {
         this.handleRevivedByTeammate();
+      } else if (data.type === 'levelTransition') {
+        // Sync level transition from host
+        if (data.level !== this.currentLevel) {
+          this.transitionToLevel(data.level);
+        }
+      } else if (data.type === 'chalk') {
+        this.receiveChalkMark(data);
       }
     }
 
@@ -2038,11 +2966,34 @@
         const distToExit = this.player.position.distanceTo(this.exitDoor.position);
         if (distToExit < 2.8) {
           if (this.player.inventory.tapes >= 3 && this.player.inventory.hasKeycard) {
-            this.triggerVictory();
+            // Level 1: also need both valves activated
+            if (this.currentLevel === 1 && !this.bothValvesActivated) {
+              alert('Pintu masih diblokir uap! Putar 2 katup terlebih dahulu.');
+            } else {
+              this.triggerVictory();
+            }
           } else {
             alert('Pintu darurat terkunci! Kumpulkan 3 Kaset Rekaman dan 1 Kartu Akses untuk membuka jalan No-Clip.');
           }
         }
+      }
+
+      // 6. Check Steam Valves (Level 1)
+      if (this.currentLevel === 1) {
+        this.steamValves.forEach((valve) => {
+          if (!valve.isActivated) {
+            const dist = this.player.position.distanceTo(valve.position);
+            if (dist < 2.5) {
+              valve.isActivated = true;
+              // Rotate wheel visually
+              if (valve.wheel) valve.wheel.rotation.z += Math.PI / 2;
+              // Dim steam light
+              if (valve.steamLight) valve.steamLight.intensity = 0;
+              this.audio.playValveCreak();
+              this.checkBothValvesActivated();
+            }
+          }
+        });
       }
     }
 
@@ -2297,9 +3248,11 @@
       // Check if player is currently targetable
       const isPlayerTargetable = !this.player.isDowned && (this.player.invulnerabilityTimer <= 0) && !this.player.isInsideLocker;
 
-      // Auditory Detection: Sprint noise
+      // Auditory Detection: Sprint noise + water puddle splash amplifier (Level 1)
       const isPlayerMakingSound = this.player.isSprinting && !this.player.skills.ghostStepActive;
-      const soundDetectionRadius = Math.max(5, 14 - (this.player.stats.stealth - 1) * 2.5);
+      let soundDetectionRadius = Math.max(5, 14 - (this.player.stats.stealth - 1) * 2.5);
+      // Water splash doubles detection radius in Level 1
+      if (this.currentLevel === 1 && this.playerInWater) soundDetectionRadius *= 1.6;
 
       // STATE MACHINE: PATROL, INVESTIGATE, CHASE, SNIFF_LOCKER
       switch (this.entity.state) {
@@ -2519,6 +3472,12 @@
     // GAME OVER & VICTORY
     // -----------------------------------------------------------------------
     triggerVictory() {
+      // Level 0 → transition to Level 1 instead of ending
+      if (this.currentLevel === 0) {
+        this.transitionToLevel(1);
+        return;
+      }
+      // Level 1+ → actual victory screen
       document.exitPointerLock();
       this.dom.escapeModal.style.display = 'flex';
       const minutes = Math.floor(this.player.survivedTime / 60);
@@ -2693,6 +3652,14 @@
         speed = 2.4;
       }
 
+      // ---- Level 1: Water Puddle Penalty ----
+      if (this.currentLevel === 1) {
+        this.playerInWater = this.isPlayerInWater();
+        if (this.playerInWater) {
+          speed *= 0.6;
+        }
+      }
+
       // Drain Battery if flashlight on
       if (this.isFlashlightOn) {
         const drainModifier = 1.0 - (this.player.stats.perception - 1) * 0.18;
@@ -2748,7 +3715,11 @@
         this.camera.position.set(this.player.position.x, eyeHeight + bobOffset, this.player.position.z);
 
         if (Math.sin(this.headBobTime) > 0.95 && Math.random() < 0.25) {
-          this.audio.playFootstep(this.player.isSprinting, this.player.isCrouched, this.player.skills.ghostStepActive);
+          if (this.currentLevel === 1 && this.playerInWater) {
+            this.audio.playWaterSplash();
+          } else {
+            this.audio.playFootstep(this.player.isSprinting, this.player.isCrouched, this.player.skills.ghostStepActive);
+          }
         }
       } else {
         const eyeHeight = this.player.isCrouched ? 0.9 : 1.7;
@@ -2770,15 +3741,18 @@
     checkWallCollision(x, z) {
       if (!this.mazeGrid) return false;
       const radius = 0.45;
-      const halfMap = (this.gridSize * this.cellSize) / 2;
-      const minC = Math.floor((x - radius + halfMap) / this.cellSize);
-      const maxC = Math.floor((x + radius + halfMap) / this.cellSize);
-      const minR = Math.floor((z - radius + halfMap) / this.cellSize);
-      const maxR = Math.floor((z + radius + halfMap) / this.cellSize);
+      // Level 0 uses gridSize=24/cellSize=4.5, Level 1 uses gridSize=28/cellSize=4.0
+      const gs = (this.currentLevel === 1) ? 28 : this.gridSize;
+      const cs = (this.currentLevel === 1) ? 4.0 : this.cellSize;
+      const halfMap = (gs * cs) / 2;
+      const minC = Math.floor((x - radius + halfMap) / cs);
+      const maxC = Math.floor((x + radius + halfMap) / cs);
+      const minR = Math.floor((z - radius + halfMap) / cs);
+      const maxR = Math.floor((z + radius + halfMap) / cs);
 
       for (let r = minR; r <= maxR; r++) {
         for (let c = minC; c <= maxC; c++) {
-          if (r < 0 || r >= this.gridSize || c < 0 || c >= this.gridSize) {
+          if (r < 0 || r >= gs || c < 0 || c >= gs) {
             return true;
           }
           const type = this.mazeGrid[r][c];
@@ -2786,14 +3760,26 @@
             return true;
           }
           if (type === 2) {
-            const cx = (c * this.cellSize) - halfMap + (this.cellSize / 2);
-            const cz = (r * this.cellSize) - halfMap + (this.cellSize / 2);
-            if (x + radius >= cx - 0.8 && x - radius <= cx + 0.8 &&
-                z + radius >= cz - 0.8 && z - radius <= cz + 0.8) {
+            const pSize = (this.currentLevel === 1) ? 0.9 : 0.8;
+            const cx = (c * cs) - halfMap + (cs / 2);
+            const cz = (r * cs) - halfMap + (cs / 2);
+            if (x + radius >= cx - pSize && x - radius <= cx + pSize &&
+                z + radius >= cz - pSize && z - radius <= cz + pSize) {
               return true;
             }
           }
         }
+      }
+      return false;
+    }
+
+    isPlayerInWater() {
+      const px = this.player.position.x;
+      const pz = this.player.position.z;
+      for (let i = 0; i < this.waterPuddles.length; i++) {
+        const p = this.waterPuddles[i];
+        const dx = px - p.x, dz = pz - p.z;
+        if (dx * dx + dz * dz < p.radius * p.radius) return true;
       }
       return false;
     }
@@ -2828,6 +3814,25 @@
         } else {
           promptText = 'Pintu Terkunci (Perlu 3 Kaset & Keycard)';
         }
+      }
+
+      // Check Steam Valves (Level 1)
+      if (!promptText && this.currentLevel === 1) {
+        for (let i = 0; i < this.steamValves.length; i++) {
+          const valve = this.steamValves[i];
+          if (!valve.isActivated) {
+            const dist = Math.hypot(this.player.position.x - valve.position.x, this.player.position.z - valve.position.z);
+            if (dist < 2.5) {
+              promptText = '[E] Putar Katup Uap 🔩';
+              break;
+            }
+          }
+        }
+      }
+
+      // Water puddle indicator (Level 1)
+      if (this.currentLevel === 1 && this.playerInWater && !promptText) {
+        promptText = '💧 Genangan air — gerak melambat!';
       }
 
       // Check Revive (horizontal 2D ground distance <= 3.8m)
@@ -2897,6 +3902,22 @@
       this.updatePlayer(delta);
       this.updateEntity(delta);
 
+      // Level 1: Update The Smiler
+      if (this.currentLevel === 1) {
+        this.updateSmiler(delta);
+      }
+
+      // Level title card fade out
+      if (this.levelTitleTimer > 0) {
+        this.levelTitleTimer -= delta;
+        if (this.dom.levelTitleCard) {
+          this.dom.levelTitleCard.style.opacity = `${Math.min(1, this.levelTitleTimer)}`;
+          if (this.levelTitleTimer <= 0) {
+            this.dom.levelTitleCard.style.opacity = '0';
+          }
+        }
+      }
+
       // Dynamically cull & update nearest lights every 8 frames (~7-8 Hz)
       if (this.frameCount % 8 === 0) {
         this.updateDynamicLights();
@@ -2908,6 +3929,11 @@
           item.group.rotation.y += delta * 1.5;
         }
       });
+
+      // Level 1: Steam blocker pulse (pulsing opacity warning)
+      if (this.currentLevel === 1 && this.steamBlockerMesh && !this.bothValvesActivated) {
+        this.steamBlockerMesh.material.opacity = 0.3 + Math.sin(Date.now() * 0.003) * 0.15;
+      }
 
       this.renderer.render(this.scene, this.camera);
     }

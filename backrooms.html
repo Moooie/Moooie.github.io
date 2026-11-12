@@ -35,6 +35,27 @@
     <div id="sanityGlitchOverlay"></div>
     <div id="chaseRedFlash"></div>
 
+    <!-- Level 1 HUD Elements -->
+    <div id="levelTitleCard" style="
+      position: fixed; top: 15%; left: 50%; transform: translateX(-50%);
+      color: #ff4400; font-family: 'Courier New', monospace; font-size: 1.6rem;
+      font-weight: bold; text-shadow: 0 0 18px #ff2200, 0 0 4px #ff4400;
+      opacity: 0; transition: opacity 0.6s; pointer-events: none; z-index: 300;
+      letter-spacing: 3px; text-transform: uppercase;
+    "></div>
+    <div id="chalkCountDisplay" style="
+      position: fixed; bottom: 160px; right: 24px;
+      color: #ddd8c0; font-family: 'Courier New', monospace; font-size: 1.1rem;
+      text-shadow: 0 0 6px #aaa890; opacity: 0.85; pointer-events: none;
+      display: none; z-index: 200;
+    ">🖍️ 15</div>
+    <div id="valveStatusDisplay" style="
+      position: fixed; bottom: 190px; right: 24px;
+      color: #88ccff; font-family: 'Courier New', monospace; font-size: 1.1rem;
+      text-shadow: 0 0 6px #44aaff; opacity: 0.9; pointer-events: none;
+      display: none; z-index: 200;
+    ">🔩 Katup 0/2</div>
+
     <!-- Crosshair in center -->
     <div id="crosshair"></div>
 
